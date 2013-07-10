@@ -14,7 +14,7 @@
 \maketitle
 
 \begin{abstract}
-
+TODO. 
 
 The attack presented by~\citeauthor{alfardan2013lucky} requires $2^{23}$ TLS connections at most to get the plaintext of one encrypted block ($16$ bytes when AES is used as a block cipher), which can be decreased with different tweaks to $2^{13}$ TLS connections per byte of a cookie.
 
@@ -32,14 +32,14 @@ The paper is ordered as follows. First, Section~\ref{sec:crypto} will very brief
 
 \section{Brief overview of Cryptography}
 \label{sec:crypto}
-In TLS, different cryptographic primitives are used to provide confidentiality, authentication, non-repudiation and integrity while communicating over the internet. Since TLS uses a MAC-Encode-Encrypt Scheme, the different subsections will describe these processes each. These subsections are written with TLS in mind, and cover specifics for the implementation of TLS rather than a full description of the specific cryptographic primitive. The first subsection denotes the cryptographic format that is used in this paper.
+In TLS, different cryptographic primitives are used to provide confidentiality, authentication, non-repudiation and integrity while communicating over the internet. Since TLS uses a MAC-Encode-Encrypt Scheme, the different subsections of this section will describe these processes. These subsections are written with TLS in mind, and cover specifics for the implementation of TLS rather than a full description of the specific cryptographic primitive. The first subsection denotes the cryptographic format that is used in this paper.
 
 \subsection{Cryptographic format}
 \label{sec:crypto:format}
 The cryptographic format used in this paper is presented in Table~\ref{sec:crypto:format:table}.
 \begin{table}[h]
-    \begin{tabular}{ll}
-    Format & Meaning \\
+    \begin{tabular}{l|l}
+    Format & Meaning \\ \hline
     A $||$ B    & Concatenation of A and B  \\
     A $\oplus$ B  & The bitwise XOR of A and B     \\
     H(A)    & Hash-function applied to A    \\
@@ -51,23 +51,30 @@ The cryptographic format used in this paper is presented in Table~\ref{sec:crypt
 
 \subsection{MAC - Message Authentication Code}
 \label{sec:crypto:hmac}
-To ensure message integrity, RFC5246~\cite{ietf2008transport} prescribes the use of a keyed Message Authentication Code (MAC). The MAC cipher suites described in the RFC are based on hashing functions, HMAC, and are described in~\cite{krawczyk1997rfc}. Though, the RFC does not prohibit the use of other cipher suites, the implementations found by~\citeauthor{alfardan2013lucky} in~\cite{alfardan2013lucky} all restrict the use to HMAC-MD5 ($16$ bytes of MAC), HMAC-SHA-1 ($20$ bytes of MAC) or HMAC-SHA-256 ($32$ bytes of MAC).
+To ensure message integrity, RFC5246~\cite{ietf2008transport} prescribes the use of a keyed Message Authentication Code (MAC). The MAC cipher suites described in the RFC are based on hashing functions, HMACs, and are described in~\cite{krawczyk1997rfc}. Though, the RFC does not prohibit the use of other cipher suites, the implementations found by~\citeauthor{alfardan2013lucky} in~\cite{alfardan2013lucky} all restrict the use to HMAC-MD5 ($16$ bytes of MAC), HMAC-SHA-1 ($20$ bytes of MAC) or HMAC-SHA-256 ($32$ bytes of MAC).
 
 To compute the HMAC for a message M and key K, the specified HMAC algorithms use the following formula. 
-\[ MAC = H((K \oplus opad)||H(K \oplus ipad)||M)). \]
-With opad, ipad to be specific $64$-byte values and key K zero-padded to $64$ bytes. "Each hash function uses a \textit{Merkle-Damg\aa rd strengthening}. Here, an 8-byte length field followed by padding of a specified byte format are appended to the message M to be hashed. The padding is at least $1$ byte in length and aligns the data on a $64$-byte boundary. The relevant hash functions also have an iterated structure, processing messages in chunks of $64$ bytes ($512$ bits) using a compression function, with the output of each compression step being chained into the next step. The compression function in turn involves a complex round structure, with many basic arithmetic operations on data being involved in each round."~\cite{alfardan2013lucky}. This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the message length of M $+ 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
+\[ HMAC(K,M) = H((K \oplus opad)||H(K \oplus ipad)||M)). \]
+With opad, ipad to be specific $64$-byte values and key K zero-padded to $64$ bytes. "Each hash function uses a \textit{Merkle-Damg\aa rd strengthening}. Here, an 8-byte length field followed by padding of a specified byte format are appended to the message M to be hashed. The padding is at least $1$ byte in length and aligns the data on a $64$-byte boundary. The relevant hash functions also have an iterated structure, processing messages in chunks of $64$ bytes ($512$ bits) using a compression function, with the output of each compression step being chained into the next step. The compression function in turn involves a complex round structure, with many basic arithmetic operations on data being involved in each round."~\cite{alfardan2013lucky}. This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the $message length of M + 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
 \[ \lceil \frac{L - 55}{64} \rceil + 4 \]
 
 \subsection{Encoding - Padding}
 \label{sec:crypto:padding}
-Not specifically a cryptographic primitive, though, padding forms a core point within the different attacks explained within this paper. TLS describes the padding to be at least $1$ byte in length, with the content being the number of padding bytes $- 1$. This forces padding such as:
+Not specifically a cryptographic primitive, though, padding forms a core point in the different attacks explained within this paper. TLS describes the padding to be at least $1$ byte in length, with the content being the $number of padding bytes - 1$. This forces padding such as:
 \["0x00", "0x01||0x01", "0x02||0x02||0x02", etc. \]
 
 \subsection{Encryption - CBC encryption}
 \label{sec:crypto:encryption}
-The attack described by~\citeauthor{alfardan2013lucky}~\cite{alfardan2013lucky} make use of one the most prominent implementation of RFC~\cite{ietf2008transport} (TLS 1.1 and 1.2), namely the use of a Block Cipher in CBC-mode with a randomized IV. In practice, AES is used as the Block Cipher. The plaintext is cut into blocks of the input size of the Block Cipher (AES has a 16 bytes block size). Ciphertext blocks are computed as:
-\[ C_j = E_K(P_j \oplus C_{j-1}) \]
-With $P_i$ the blocks of plaintext (and extras, described in Section~\ref{sec:TLS}), $C_0$ the IV and $K$ the key for Block Cipher $E$. Ciphertext C is the concatenation of all $C_i$'s.
+The attack described by~\citeauthor{alfardan2013lucky}~\cite{alfardan2013lucky} makes use of one the most prominent implementations of the RFC~\cite{ietf2008transport}, namely the use of a Block Cipher in CBC-mode with a randomized IV. In practice, AES is used as the Block Cipher.
+
+The plaintext is cut into blocks of the input size of the Block Cipher (AES has a $16$ bytes block size). Ciphertext blocks are computed as:
+\[ 
+\begin{split}
+C_i &= E_K(P_i \oplus C_{i-1}) \\
+C_0 &= IV 
+\end{split}
+\]
+With $P_i$ the blocks of plaintext (plus extras, as described in Section~\ref{sec:TLS}) and $K$ the key for Block Cipher $E$. Ciphertext $C$ is the concatenation of all $C_i$'s.
 
 \section{TLS}
 \label{sec:TLS}
