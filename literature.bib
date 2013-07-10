@@ -25,6 +25,7 @@
 % C
 % Multi-session attack scenario
 % This overcomes the termination of TLS sessions on fatal error by transmitting the same plaintext in the same position in the cipher text
+% TLS fixed this by forcing to do a MAC-check, even if padding is invalid
 @incollection{canvel2003password,
   title={Password interception in a SSL/TLS channel},
   author={Canvel, Brice and Hiltgen, Alain and Vaudenay, Serge and Vuagnoux, Martin},
@@ -32,6 +33,23 @@
   pages={583--599},
   year={2003},
   publisher={Springer}
+}
+
+% D
+% TLS 1.2 RFC
+@article{ietf2008transport,
+  title={The Transport Layer Security (TLS) Protocol Version 1.2},
+  author={IETF Network Working Group and others},
+  journal={RFC5246)},
+  year={2008}
+}
+
+% HMAC RFC
+@misc{krawczyk1997rfc,
+  title={RFC 2104: HMAC: Keyed-hashing for message authentication},
+  author={Krawczyk, Hugo and Bellare, Mihir and Canetti, Ran},
+  year={1997},
+  publisher={IETF, February}
 }
 
 % Potentials:
