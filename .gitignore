@@ -1,0 +1,7 @@
+*.aux
+*.log
+*.gz
+*.bbl
+*.blg
+paper.pdf
+diff_paper.tex
