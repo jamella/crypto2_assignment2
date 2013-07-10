@@ -1,0 +1,38 @@
+% A
+% first practical padding oracle attack
+@inproceedings{vaudenay2002security,
+  title={Security Flaws Induced by CBC Padding—Applications to SSL, IPSEC, WTLS...},
+  author={Vaudenay, Serge},
+  booktitle={Advances in Cryptology—EUROCRYPT 2002},
+  pages={534--545},
+  year={2002},
+  organization={Springer}
+}
+
+% B
+% the actual lucky thirteen paper
+% C [6] has a similar multi-session attack scenario
+% [13] BEAST attack
+% [28] advocates MEE-TLS-CBC (they prove it provides length hiding authenticated-encryption security), B relativizes the applicability in practice
+% [30] already identified the same timing channel in TLS that B exploits, but focus on information about message lengths
+@inproceedings{alfardan2013lucky,
+  title={Lucky thirteen: Breaking the TLS and DTLS record protocols},
+  author={AlFardan, Nadhem J and Paterson, Kenneth G},
+  booktitle={IEEE Symposium on Security and Privacy},
+  year={2013}
+}
+
+% C
+% Multi-session attack scenario
+% This overcomes the termination of TLS sessions on fatal error by transmitting the same plaintext in the same position in the cipher text
+@incollection{canvel2003password,
+  title={Password interception in a SSL/TLS channel},
+  author={Canvel, Brice and Hiltgen, Alain and Vaudenay, Serge and Vuagnoux, Martin},
+  booktitle={Advances in Cryptology-Crypto 2003},
+  pages={583--599},
+  year={2003},
+  publisher={Springer}
+}
+
+% Potentials:
+% RFC2040: RC5-CBC-PAD
