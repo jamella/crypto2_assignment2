@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage[numbers]{natbib}
+\usepackage{color}
 \graphicspath{{Images/}}
 
 \title{Lucky Thirteen - A Cryptographic Analyses}
@@ -16,7 +17,7 @@
 
 
 \begin{abstract}
-TODO: clean up the text underneath, be more elaborate, fix text from all sections.
+\textcolor{red}{TODO: clean up the text underneath, be more elaborate, fix text from all sections.}
 
 The attack presented by~\citeauthor{alfardan2013lucky} requires $2^{23}$ TLS connections at most to get the plaintext of one encrypted block ($16$ bytes when AES is used as a block cipher), which can be decreased with different tweaks to $2^{13}$ TLS connections per byte of a cookie.
 
@@ -61,18 +62,18 @@ The cryptographic format used in this paper is presented in Table~\ref{sec:crypt
 \subsection{MAC - Message Authentication Code}
 \label{sec:crypto:hmac}
 To ensure message integrity, RFC5246~\cite{ietf2008transport} prescribes the use of a keyed Message Authentication Code (MAC). The MAC cipher suites described in the RFC are based on hashing functions, HMACs, and are described in~\cite{krawczyk1997rfc}. Though, the RFC does not prohibit the use of other cipher suites, the implementations found by~\citeauthor{alfardan2013lucky} in~\cite{alfardan2013lucky} all restrict the use to HMAC-MD5, HMAC-SHA-1 or HMAC-SHA-256~\footnote{HMAC-MD5 has 16 bytes of MAC.\\HMAC-SHA-1 has 20 bytes of MAC.\\HMAC-SHA-256 has 32 bytes of MAC.} To compute the HMAC for a message M and key K, the specified HMAC algorithms use the following formula. 
-\[ HMAC(K,M) = H((K \oplus opad)||H(K \oplus ipad)||M)). \]
+\[ \text{HMAC}(K,M) = H((K \oplus opad)||H(K \oplus ipad)||M)). \]
 With \textit{opad}, \textit{ipad} to be specific $64$-byte values and key $K$ zero-padded to $64$ bytes. "Each hash function uses a \textit{Merkle-Damg\aa rd strengthening}. Here, an 8-byte length field followed by padding of a specified byte format are appended to the message M to be hashed. The padding is at least $1$ byte in length and aligns the data on a $64$-byte boundary. The relevant hash functions also have an iterated structure, processing messages in chunks of $64$ bytes ($512$ bits) using a compression function, with the output of each compression step being chained into the next step. The compression function in turn involves a complex round structure, with many basic arithmetic operations on data being involved in each round."~\cite{alfardan2013lucky}.
 
-TODO: more elaborate; maybe a figure or a formula with regards to the above Merkle-Damg\aa rd strengthening.
+\textcolor{red}{TODO: more elaborate; maybe a figure or a formula with regards to the above Merkle-Damg\aa rd strengthening.}
 
-This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the $message length of M + 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
+This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the $\text{message length of} M + 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
 \[ \lceil \frac{L - 55}{64} \rceil + 4 \]
 
 \subsection{Encoding - Padding}
 \label{sec:crypto:padding}
-Not specifically a cryptographic primitive, though, padding forms a core point in the different attacks explained within this paper. TLS describes the padding to be at least $1$ byte in length, with the content being the $number of padding bytes - 1$. This forces padding such as:
-\["0x00", "0x01||0x01", "0x02||0x02||0x02", etc. \]
+Not specifically a cryptographic primitive, though, padding forms a core point in the different attacks explained within this paper. TLS describes the padding to be at least $1$ byte in length, with the content being the $\text{number of padding bytes} - 1$. This forces padding such as:
+\["0\text{x}00", "0\text{x}01||0\text{x}01", "0\text{x}02||0\text{x}02||0\text{x}02", \text{etc.} \]
 
 \subsection{Encryption - CBC encryption}
 \label{sec:crypto:encryption}
@@ -82,7 +83,7 @@ The plaintext is cut into blocks of the input size of the Block Cipher (AES has 
 \[ 
 \begin{split}
 C_i &= E_K(P_i \oplus C_{i-1}) \\
-C_0 &= IV 
+C_0 &= \text{IV} 
 \end{split}
 \]
 With $P_i$ the blocks of plaintext (plus extras, as described in Section~\ref{sec:tls}) and $K$ the key for Block Cipher $E$. Ciphertext $C$ is the concatenation of all $C_i$'s.
@@ -116,17 +117,58 @@ The RFC~\cite{ietf2008transport} does not describe the steps that need to be tak
   \item Is the padding of the appropriate format?
   \item Is the MAC correct (using the correct SEQ number and HDR field?
 \end{itemize}
+Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0, exploiting timing differences when accepting records, it is advised by TLS 1.2~\cite{ietf2008transport} to avoid timing differences by assuming zero-length padding if the padding format sanity check does not work out. In this case, the MAC is still calculated, but the record is nonetheless discarded. More on this in Section~\ref{sec:paddingoracle}.
 
 
 
-\section{Padding Oracle Attacks}
+\section{Padding Oracle}
 \label{sec:paddingoracle}
+Padding Oracle attacks form the building block for the Lucky Thirteen attack, which is the main topic of this paper and will be discussed in Section~\ref{sec:lucky}. Padding oracles are protocols, servers or web applications (named oracles) that reveal information on the correctness of the used padding, as described in Section~\ref{sec:crypto:padding}. By leaking information on the correctness of the padding, these oracles leak vital information on the plaintext. This Section will first address the use of padding oracles in the attack proposed by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0~\cite{dierks1999rfc} after which some information on \textit{Bomb oracles} will elaborated upon.
 
-\subsection{}
+\subsection{~\citeauthor{vaudenay2002security} attack on TLS 1.0}
+\label{sec:paddingoracle:padding}
+For this Section, w.l.o.g., it will be assumed that this application data protocol run uses the HMAC\_SHA1 with AES\_CBC mode~\footnote{This makes for t = 20 bytes MAC size. \\ b = 16 bytes block size}. The format in this Section mostly depends upon the same format as used in~\cite{alfardan2013lucky}, to keep consistency throughout the literature. Furthermore, this subsection is heavily inspired by ~\cite{alfardan2013lucky,vaudenay2002security}.
+
+Recall the following two formulas to calculate ciphertexts (when  encrypting) and plaintexts (when decrypting).
+\[
+\begin{split}
+C_i &= E_K(P_i \oplus C_{i-1}) \\
+P_i &= D_K(C_i) \oplus C_{i-1} \\
+C_0 &= \text{IV} \\
+&= P_0
+\end{split}
+\]
+By pushing different ciphertexts towards the Oracle, the attacker can control the bytes that are checked by the Oracle. When the Oracle receives the encrypted record, it will first check if the ciphertext is of a correct size, after which it will start to decrypt. After decryption, the Oracle needs to check the validity of the padding and then remove it from the record. In the old TLS version 1.0~\cite{dierks1999rfc}, whenever the padding was incorrect, an error-message was sent to the sender of the record (the attacker). This means that the attacker can query for valid padding of the plaintext of which he sent and encrypted version off. Recall the strict way padding is allowed in TLS as described in Section~\ref{sec:crypto:padding}. Knowing if the plaintext version of an encrypted record includes a valid padding thus leaks information on the plaintext.
+
+Now lets consider, one wants to have the plaintext block $P^{*}$ corresponding to the ciphertext block $C^{*}$ gotten from somewhere in a ciphertext stream, assuming ciphertext block $C^{'}$ precedes this ciphertext $C^{*}$. This means that the plaintext block $P^{*}$ could be calculated in the following way.
+\[ P^{*} = D_K(C^{*}) \oplus C^{'} \]
+Lets form a ciphertext function $C^{att}$ that depends on some $\Delta$, which also contain the interesting ciphertext blocks $C^{'}$ and then one of which the plaintext is needed $C^{*}$. All $C$'s are blocks of the correct block size.
+\[ \begin{split}
+C^{att}(\Delta) &= \text{HDR} || C_0 || C_1 || C_2 || C^{'} \oplus \Delta || C^{*} \\
+\text{With } C_0 &= \text{IV}, \\
+C_3 &= C^{'} \oplus \Delta \\
+\text{And } C_4 &= C^{*}
+\end{split}  \]
+Of interest now, is $C_4$ ($C^{*}$), which corresponds to $P_4$ ($P^{*}$), but has slightly changed due to the transformation with $\Delta$.
+\[ \begin{split}
+P_4 &= D_K(C^{*}) \oplus (C^{'} \oplus \Delta) \\
+&= P^{*} \oplus \Delta \\
+\end{split} \]
+
+If this $C^{att}$ is sent towards an Oracle, one of three things can happen internally in the Oracle, of which we can separate two categories.
+\begin{enumerate}
+  \item The padding gets accepted. This happens in two cases.
+	\begin{itemize}
+		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte. This is seen as valid padding, and chopped off. The last $20$ bytes of $P_4$ that are left are seen as MAC, with the plaintext record that's left with length $64 - 21 (\text{padding and MAC}) = 43 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || 43 \text{ bytes plaintext R} = 56\text{ bytes}$.
+		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' version of padding is less likely by a factor of $2^8$ (byte). This means that there are at least $2$ bytes of padding chopped off at the end, after which a $20$ bytes MAC is also chopped off, with a remainder of at most $64 - 22 (\text{padding and MAC}) = 42 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || 42 \text{ bytes plaintext R at most} = 55\text{ bytes}$.
+	\end{itemize}
+  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. As specified in TLS 1.0~\cite{dierks1999rfc},a \texttt{decryption\_failed} error is thrown. For the sake of Section~\ref{sec:lucky}, we also describe the implementation of TLS 1.1 and 1.2~\cite{ietf2008transport}. In this specification, the padding should be considered of zero length, resulting in the last $20$ bytes of the decrypted $C^{att}$ to be considered the MAC which is calculated on $\text{SQN} || \text{HDR} || 44 (64 - 20) \text{ bytes plaintext R} = 57\text{ bytes}$.
+\end{enumerate}
 
 \subsection{Bomb Oracles}
 \label{sec:paddingoracle:bomb}
-
+Problem: \texttt{decryption\_failed} is a fatal error. \\
+\textcolor{red}{TODO: fixed using D, with multi-session TLS attacks}
 
 
 
