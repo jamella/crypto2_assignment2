@@ -115,7 +115,7 @@ The RFC~\cite{ietf2008transport} does not describe the steps that need to be tak
   \item Check: is the ciphertext large enough to contain at least a zero-length record, a MAC tag of the required size and at least one byte of padding?
   \item Decrypt the ciphertext to recover the plaintext blocks: $P_i = D_k(C_i) \oplus C_{i-1}$.
   \item Is the padding of the appropriate format?
-  \item Is the MAC correct (using the correct SEQ number and HDR field?
+  \item Is the MAC correct (using the correct SQN number and HDR field)?
 \end{itemize}
 Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0, exploiting timing differences when accepting records, it is advised by TLS 1.2~\cite{ietf2008transport} to avoid timing differences by assuming zero-length padding if the padding format sanity check does not work out. In this case, the MAC is still calculated, but the record is nonetheless discarded. More on this in Section~\ref{sec:paddingoracle}.
 
@@ -155,15 +155,80 @@ P_4 &= D_K(C^{*}) \oplus (C^{'} \oplus \Delta) \\
 &= P^{*} \oplus \Delta \\
 \end{split} \]
 
+As can be seen from these equations, $P_4$ does heavily rely on both $\Delta$ and $P^{*}$. This means that by changing $\Delta$, the decrypted $P_4$ can be altered while still being related to the actual plaintext $P^{*}$ that this attack is after.
+
 If this $C^{att}$ is sent towards an Oracle, one of three things can happen internally in the Oracle, of which we can separate two categories.
 \begin{enumerate}
   \item The padding gets accepted. This happens in two cases.
 	\begin{itemize}
-		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte. This is seen as valid padding, and chopped off. The last $20$ bytes of $P_4$ that are left are seen as MAC, with the plaintext record that's left with length $64 - 21 (\text{padding and MAC}) = 43 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || 43 \text{ bytes plaintext R} = 56\text{ bytes}$.
-		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' version of padding is less likely by a factor of $2^8$ (byte). This means that there are at least $2$ bytes of padding chopped off at the end, after which a $20$ bytes MAC is also chopped off, with a remainder of at most $64 - 22 (\text{padding and MAC}) = 42 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || 42 \text{ bytes plaintext R at most} = 55\text{ bytes}$.
+		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte. This is seen as valid padding, and chopped off. The last $20$ bytes of $P_4$ that are left, are seen as MAC. With the plaintext record having length $64 - 21 (\text{padding and MAC}) = 43 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (43 \text{ bytes} = 56\text{ bytes}$.
+		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' (longer) version of padding is less likely by a factor of $2^8$ (byte). This means that there are at least $2$ bytes of padding chopped off at the end, after which a $20$ bytes MAC is also chopped off, with a remainder of at most $64 - 22 (\text{padding and MAC}) = 42 \text{bytes}$ for plaintext record R. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (42 \text{ bytes at most}) = 55\text{ bytes}$.
 	\end{itemize}
-  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. As specified in TLS 1.0~\cite{dierks1999rfc},a \texttt{decryption\_failed} error is thrown. For the sake of Section~\ref{sec:lucky}, we also describe the implementation of TLS 1.1 and 1.2~\cite{ietf2008transport}. In this specification, the padding should be considered of zero length, resulting in the last $20$ bytes of the decrypted $C^{att}$ to be considered the MAC which is calculated on $\text{SQN} || \text{HDR} || 44 (64 - 20) \text{ bytes plaintext R} = 57\text{ bytes}$.
+  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. As specified in TLS 1.0~\cite{dierks1999rfc},a \texttt{decryption\_failed} error is thrown. For the sake of Section~\ref{sec:lucky}, we also describe the implementation of TLS 1.1 and 1.2~\cite{ietf2008transport}. In this specification, the padding should be considered of zero length, resulting in the last $20$ bytes of the decrypted $C^{att}$ to be considered the MAC which is calculated on $\text{SQN} || \text{HDR} || R (64 - 20 \text{ bytes} = 57\text{ bytes}$.
 \end{enumerate}
+
+\textit{Category 1} If a padding gets accepted, this means that either the last plaintext byte of block $P_4$ is $0\text{x}00$, or some other accepting byte pattern occupies the last bytes of $P_4$. These cases can be distinguished by changing the penultimate byte in $\Delta$, so that $P_4$ gets a changed penultimate byte. If the padding is still accepted, the last byte of $P_4$ is $0\text{x}00$. If the padding does not get accepted, the last byte was similar to the penultimate byte (and maybe even more preceding bytes), and this can be found out by repeating the changing of $\Delta$ in other bytes as well (resulting in the discovery of even more plaintext bytes in $P_4$).
+
+\textit{Category 2} If the padding did not get accepted, $\Delta$ needs a different last byte for it to build a $P_4$ that does end in a valid padding pattern. Then, by following the steps in the preceding paragraph, it can be found out what the last byte of $P_4$ is (and thus being able to figure out the last byte of $P^{*}$).
+
+Considering the knowledge of the last byte of plaintext $P^{*}$ corresponding to $C^{*}$, the other bytes of this plaintext block can be derived in a similar matter. To get the penultimate byte of this block, it is necessary to trigger an accepted padding of the form $0\text{x}01||0\text{x}01$. Since the last byte of $P^{*}$ is already known, $\Delta$ can be constructed in such a way that the last byte of $P_4$ corresponds to $0\text{x}01$, now it is necessary to alter the penultimate byte of $\Delta$ until a padding gets accepted (in worst case $2^8$ alterings necessary). This way, the penultimate byte of $P_4$ and thus $P{*}$ can be extracted. The above roughly sketched algorithm can be used to extract the whole plaintext $P^{*}$ corresponding to ciphertext $C^{*}$.
+
+The formal algorithms are as follows.
+\begin{verbatim}
+Decrypt last byte
+1. Set zb = 0x00, delta = (16 times) zb.
+2. Construct C_att = HDR||IV||C_1||C_2||
+                C' xor delta ||C*.
+3. Send C_att to the Oracle.
+4. If 'decryption_failed' is thrown then
+6. -Set delta = delta + 0x01.
+6. -Go to step 2.
+7. Else
+8. -Set delta = delta xor ((14 times) zb
+                ||0xFF||0xFF).
+9. -Construct C_att = HDR||IV||C_1||C_2||
+                C' xor delta||C*.
+10. -Send C_att to the Oracle.
+11. -If 'decryption_failed' is thrown then
+12. --Go to step 6.
+13. -Else
+14. --output delta.
+15. -Endif.
+16. Endif.
+\end{verbatim}
+The output is the $\Delta$ for which $P_4$ ends in $0\text{x}00$. The last byte of $P^{*}$ is equal to the last byte of $P_4 \oplus \Delta$. Since the last byte of $P_4$ is $0\text{x}00$, the last byte of $P^{*}$ is equal to the last byte of $\Delta$.
+
+To get the plaintext byte i from the end (starting with the last byte i = 0), consider $rm^{'}$ to be the $\Delta$ for which the padding is correct up to a padding length of i+1 (thus, the content of the padding being i). Set $rm$ to be $rm^{'}$ with the last i bytes all added up with 1.
+\begin{verbatim}
+Decrypt byte i (from the end)
+i bytes from the end known
+(because counting from 0)
+1. Set zb = 0x00, j = 0.
+2. Set delta = (16 times) zb xor rm.
+3. Set j = j + 1.
+4. Set delta = delta xor (15-i times) zb ||
+          zb + j || (i times) 0xFF.
+5. Construct C_att = HDR||IV||C_1||C_2||
+          C' xor delta||C*.
+6. Send C_att to the Oracle.
+7. If 'decryption_failed' is thrown then
+8. -Go to step 3.
+9. Else
+10. -Set delta = delta xor (15-i-1 times) zb ||
+          (i+2 times) 0xFF
+11. -Construct C_att = HDR||IV||C_1||C_2||
+          C' xor delta||C*.
+12. -Sent C_att to the Oracle.
+13. -If 'decryption_failed' is thrown then
+14. --Go to step 4.
+15. -Else
+16. --output delta.
+17. -Endif.
+18. Endif.
+\end{verbatim}
+The output is the $\Delta$ for which $P_4$ ends in i+1 times (counting from 1) $0\text{x}i$. The last i+1 bytes of $P^{*}$ are equal to the last i+1 bytes of $P_4 \oplus \Delta$.
+
+Using this last algorithm, one can completely decrypt ciphertext $C^{*}$ into $P^{*}$, with an average of $\frac{2^8}{2} = 2^7$ tries per byte, having $16$ ($2^4$) bytes in AES\_CBC mode, the complete average of recovering block $C^{*}$ is $2^7 * 2^4 = 2^{11}$. Though, this is not completely true, since the \texttt{decryption\_failed} errors are fatal to the TLS connection. To solve this, Section~\ref{sec:paddingoracle:bomb} will discuss Bomb Oracles to overcome this problem.
 
 \subsection{Bomb Oracles}
 \label{sec:paddingoracle:bomb}
