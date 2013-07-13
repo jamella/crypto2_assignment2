@@ -20,7 +20,6 @@
 \textcolor{red}{TODO: clean up the text underneath, be more elaborate, fix text from all sections.}
 
 The attack presented by~\citeauthor{alfardan2013lucky} requires $2^{23}$ TLS connections at most to get the plaintext of one encrypted block ($16$ bytes when AES is used as a block cipher), which can be decreased with different tweaks to $2^{13}$ TLS connections per byte of a cookie.
-
 \end{abstract}
 
 
@@ -31,18 +30,23 @@ Cryptography, SSL, TLS, Lucky Thirteen, Padding Oracle, Timing attacks
 
 
 
+%SECTION I
 \section{Introduction}
 \label{sec:intro}
+\textcolor{red}{TODO: fix introduction, make more clear what TLS is used for and what makes this attack so dangerous}
+
 This paper explores the February 2013 theoretical attack on TLS (and DTLS) called \textit{Lucky Thirteen}~\cite{alfardan2013lucky}. This theoretic attack describes why the bandits used to fix TLS 1.1 and 1.2 after the attack of~\citeauthor{canvel2003password}~\cite{canvel2003password} do not provide the necessary security to the most used internet protocol.This paper is scoped to the implications of this attack on TLS Security, and does not provide information on how to apply a similar attack on DTLS. The reader is referred to~\cite{alfardan2013lucky} for details on DTLS, although mentionable is the fact that the theoretical attack on TLS, is practical for DTLS due to its nature not to terminate sessions on bad MAC or bad padding errors.
 
 The paper is ordered as follows. First, Section~\ref{sec:crypto} will very briefly overview the cryptography (and crypto format) that's important to understand the attack. Section~\ref{sec:tls} describes the main features in TLS responsible for padding oracle attacks, which will be discussed in Section~\ref{sec:paddingoracle}. The wrongly placed bandits and their weaknesses are discussed in Section~\ref{sec:lucky} which covers the Lucky Thirteen attack. This paper will conclude with the future of TLS in Section~\ref{sec:future}.
 
 
 
+% SECTION II
 \section{Brief overview of Cryptography}
 \label{sec:crypto}
 In TLS, different cryptographic primitives are used to provide confidentiality, authentication, non-repudiation and integrity while communicating over the internet. Since TLS uses a MAC-Encode-Encrypt Scheme, the different subsections of this section will describe these processes. These subsections are written with TLS in mind, and cover specifics for the implementation of TLS rather than a full description of the specific cryptographic primitive. The first subsection denotes the cryptographic format that is used in this paper.
 
+% SECTION II-A
 \subsection{Cryptographic format}
 \label{sec:crypto:format}
 The cryptographic format used in this paper is presented in Table~\ref{sec:crypto:format:table}.
@@ -59,6 +63,7 @@ The cryptographic format used in this paper is presented in Table~\ref{sec:crypt
     \label{sec:crypto:format:table}
 \end{table}
 
+% SECTION II-B
 \subsection{MAC - Message Authentication Code}
 \label{sec:crypto:hmac}
 To ensure message integrity, RFC5246~\cite{ietf2008transport} prescribes the use of a keyed Message Authentication Code (MAC). The MAC cipher suites described in the RFC are based on hashing functions, HMACs, and are described in~\cite{krawczyk1997rfc}. Though, the RFC does not prohibit the use of other cipher suites, the implementations found by~\citeauthor{alfardan2013lucky} in~\cite{alfardan2013lucky} all restrict the use to HMAC-MD5, HMAC-SHA-1 or HMAC-SHA-256~\footnote{HMAC-MD5 has 16 bytes of MAC.\\HMAC-SHA-1 has 20 bytes of MAC.\\HMAC-SHA-256 has 32 bytes of MAC.} To compute the HMAC for a message M and key K, the specified HMAC algorithms use the following formula. 
@@ -70,11 +75,13 @@ With \textit{opad}, \textit{ipad} to be specific $64$-byte values and key $K$ ze
 This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the $\text{message length of} M + 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
 \[ \lceil \frac{L - 55}{64} \rceil + 4 \]
 
+% SECTION II-C
 \subsection{Encoding - Padding}
 \label{sec:crypto:padding}
 Not specifically a cryptographic primitive, though, padding forms a core point in the different attacks explained within this paper. TLS describes the padding to be at least $1$ byte in length, with the content being the $\text{number of padding bytes} - 1$. This forces padding such as:
 \["0\text{x}00", "0\text{x}01||0\text{x}01", "0\text{x}02||0\text{x}02||0\text{x}02", \text{etc.} \]
 
+% SECTION II-D
 \subsection{Encryption - CBC encryption}
 \label{sec:crypto:encryption}
 The attack described by~\citeauthor{alfardan2013lucky}~\cite{alfardan2013lucky} makes use of one the most prominent implementations of the RFC~\cite{ietf2008transport}, namely the use of a Block Cipher in CBC-mode with a randomized IV. In practice, AES is used as the Block Cipher.
@@ -90,12 +97,14 @@ With $P_i$ the blocks of plaintext (plus extras, as described in Section~\ref{se
 
 
 
+% SECTION III
 \section{TLS}
 \label{sec:tls}
 TLS is used to provide for a cryptographically secure connection between two entities on the internet. TLS consists of four protocols: a handshake protocol to establish a connection; an alert protocol; the change cipher spec protocol; application data protocol. In this paper, the scope will be on an already established connection between these two entities (application data protocol) rather than the other protocols because the attack by~\citeauthor{alfardan2013lucky} takes place after the handshake and without the alert of change cipher spec protocol. Furthermore, the scope is on the versions 1.1 and 1.2 of TLS. These versions have tried to fix the origin of an attack proposed by~\citeauthor{vaudenay2002security} in~\cite{vaudenay2002security}.
 
 In the following subsections the TLS Record and the procedure of accepting a received record will be described.
 
+% SECTION III-A
 \subsection{TLS Record}
 \label{sec:tls:record}
 The basis for the attack on TLS 1.0 has to do with the fundamental approach TLS took into the formatting their TLS Record into a MAC-Encode-Encrypt Scheme as described in Section~\ref{sec:crypto}. First the MAC is applied to the payload, preceded by a HDR~\footnote{The HDR field is a 5 byte field consisting of the version (1 byte), protocol type (2 bytes) and length of the payload.(2 bytes)} and a SQN~\footnote{The SQN field is a 8 byte field consisting of the current sequence number, which is incremented each record.} field. After which the original payload is appended by the MAC and padding, and then encrypted to become ciphertext. Figure~\ref{fig:tls} has a visual representation of an actual TLS record. Actually, this Figure contains three minor errors/simplifications: the HDR and SQN fields are switched with respect to the Figure, according to~\cite{ietf2008transport}; the padding field consists of two field, the actual padding (minimal of $1$ byte) followed by the length of this padding ($1$ byte); the ciphertext is preceded by the HDR field and the IV that is forced to be completely random and unpredictable.
@@ -107,6 +116,7 @@ The basis for the attack on TLS 1.0 has to do with the fundamental approach TLS 
 	\label{fig:tls}
 \end{figure}
 
+% SECTION III-B
 \subsection{Accepting a record}
 \label{sec:tls:accepting}
 The RFC~\cite{ietf2008transport} does not describe the steps that need to be taken before accepting the payload of a received TLS record, fortunately the authors of the Lucky Thirteen attack have proposed a (incomplete) list of actions to be undertaken.
@@ -121,10 +131,12 @@ Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security
 
 
 
+% SECTION IV
 \section{Padding Oracle}
 \label{sec:paddingoracle}
 Padding Oracle attacks form the building block for the Lucky Thirteen attack, which is the main topic of this paper and will be discussed in Section~\ref{sec:lucky}. Padding oracles are protocols, servers or web applications (named oracles) that reveal information on the correctness of the used padding, as described in Section~\ref{sec:crypto:padding}. By leaking information on the correctness of the padding, these oracles leak vital information on the plaintext. This Section will first address the use of padding oracles in the attack proposed by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0~\cite{dierks1999rfc} after which some information on \textit{Bomb oracles} will elaborated upon.
 
+% SECTION IV-A
 \subsection{~\citeauthor{vaudenay2002security} attack on TLS 1.0}
 \label{sec:paddingoracle:padding}
 For this Section, w.l.o.g., it will be assumed that this application data protocol run uses the HMAC\_SHA1 with AES\_CBC mode~\footnote{This makes for t = 20 bytes MAC size. \\ b = 16 bytes block size}.\footnote{The format in this Section mostly depends upon the same format as used in~\cite{alfardan2013lucky}, to keep consistency throughout the literature. Furthermore, this subsection is heavily inspired by ~\cite{alfardan2013lucky,vaudenay2002security}.}
@@ -239,8 +251,9 @@ The output is the $\Delta$ for which $P_4$ ends in i+1 times (counting from 1) $
 
 Using this last algorithm, one can completely decrypt ciphertext $C^{*}$ into $P^{*}$, with an average of $\frac{2^8}{2} = 2^7$ tries per byte, having $16$ ($2^4$) bytes in AES\_CBC mode, the complete average of recovering block $C^{*}$ is $2^7 * 2^4 = 2^{11}$.
 
-Though, the above is not entirely true, since the \texttt{decryption\_failed} errors are fatal to the TLS connection. To solve this, Section~\ref{sec:paddingoracle:bomb} will discuss Bomb Oracles to overcome this problem. Furthermore, the error messages that are proposed in this subsection are not send in the clear, and can therefore not be read by an attacker. This will be solved by the introduction of distinct timing attacks (Lucky Thirteen) in Section~\ref{sec:lucky} instead of relying upon the error messages.
+Though, the above is not entirely true, since the \texttt{decryption\_failed} errors are fatal to the TLS connection. To solve this, Section~\ref{sec:paddingoracle:bomb} will discuss Bomb Oracles to overcome this problem. Furthermore, the error messages that are proposed in this subsection are not send in the clear, and can therefore not be read by an attacker. This will be solved by the introduction of distinct timing attacks (Lucky Thirteen~\cite{alfardan2013lucky} and the attack by~\citeauthor{canvel2003password}~\cite{canvel2003password}) in Section~\ref{sec:lucky} instead of relying upon the error messages.
 
+% SECTION IV-B
 \subsection{Bomb Oracles}
 \label{sec:paddingoracle:bomb}
 Problem: \texttt{decryption\_failed} is a fatal error. \\
@@ -248,12 +261,14 @@ Problem: \texttt{decryption\_failed} is a fatal error. \\
 
 
 
+% SECTION V
 \section{Lucky Thirteen}
 \label{sec:lucky}
 Recall from Section~\ref{sec:tls:accepting} the difference between TLS 1.0 and TLS 1.1 and 1.2. If the padding is not found to be valid, in TLS 1.0 the \texttt{decryption\_failed} error is thrown, though, in TLS 1.1 and 1.2, zero length padding is assumed, and the MAC is calculated on the entire record left when chopping off the MAC.
 
 The Lucky Thirteen attack will be described in three parts, first the bandit of applying zero length padding is discussed, after which the complexity of the attack is explained, and finally the practicality of this attack is discussed.
 
+% SECTION V-A
 \subsection{TLS 1.1 and 1.2 bandit}
 \label{sec:lucky:bandit}
 Recall from Section~\ref{sec:paddingoracle:padding} that three things can happen when sending a ciphertext $C^{att}$ towards the Oracle.
@@ -285,24 +300,23 @@ It can be seen from Table~\ref{sec:lucky:bandit:table} that a padding pattern th
 \end{quote}
 That last sentence is the essence that is explained in this subsection, and was exploited by~\citeauthor{alfardan2013lucky}~\cite{alfardan2013lucky}.
 
+% SECTION V-B
 \subsection{Complexity of Lucky Thirteen}
 \label{sec:lucky:complexity}
 As shown in Section~\ref{sec:lucky:bandit}, the case in which a valid padding pattern can be distinguished, needs at least a valid padding pattern of length two. This leads to complexity of (in worst case), trying all byte variations for the last two bytes of $\Delta$, leading to a worst case complexity of $2^8*2^8 = 2^{16}$, in the average case $\frac{2^{16}}{2} = 2^{15}$. With knowledge about the plaintext $P^{*}$'s last two bytes, the third-to-last byte can be discovered by setting the last two plaintext bytes of $P_4$ to $0\text{x}02||0\text{x}02$ and altering the third-to-last byte. In worst case, this take $2^8$ trials with an average of $\frac{2^8}{2} = 2^7$ for every byte of plaintext from right to left. To recover an entire plaintext block $P^{*}$, one needs to first get the last two bytes with a complexity of $2^{15}$ and then find the other $14$ bytes with complexity $2^7$, giving a total of $2^{15} * 14 * 2^7 \approx 2^{26}$ trials.
 
+% SECTION V-C
 \subsection{Practicality of Lucky Thirteen}
 \label{sec:lucky:practicality}
+\textcolor{red}{First explain the results from Lucky Thirteen, than discuss how to build the attack using multi-channel}
 
+Lucky Thirteen~\cite{alfardan2013lucky}
+
+Multi-channel attack~\cite{canvel2003password}
 
 BEAST~\cite{duong2011here}
 
-
-
-regular plaintext recovery of a block: 2\^23 connections
-if base64 (cookies, http basic access authentication) used: 2\^23 -> 2\^19 connection per block
-per cookie byte, using BEAST technique: 2\^13 connections
-
-
-
+% SECTION VI
 \section{The Future of TLS}
 \label{sec:future}
 
