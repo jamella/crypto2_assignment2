@@ -117,7 +117,7 @@ The RFC~\cite{ietf2008transport} does not describe the steps that need to be tak
   \item Is the padding of the appropriate format?
   \item Is the MAC correct (using the correct SQN number and HDR field)?
 \end{itemize}
-Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0, exploiting timing differences when accepting records, it is advised by TLS 1.2~\cite{ietf2008transport} to avoid timing differences by assuming zero-length padding if the padding format sanity check does not work out. In this case, the MAC is still calculated, but the record is nonetheless discarded. More on this in Section~\ref{sec:paddingoracle}.
+Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0, exploiting differences when accepting records, it is advised by TLS 1.1 and 1.2~\cite{ietf2008transport} to avoid timing differences by assuming zero length padding if the padding format sanity check does not work out. In this case, the MAC is still calculated, but the record is nonetheless discarded. More on this in Section~\ref{sec:paddingoracle} and Section~\ref{sec:lucky}.
 
 
 
@@ -127,7 +127,7 @@ Padding Oracle attacks form the building block for the Lucky Thirteen attack, wh
 
 \subsection{~\citeauthor{vaudenay2002security} attack on TLS 1.0}
 \label{sec:paddingoracle:padding}
-For this Section, w.l.o.g., it will be assumed that this application data protocol run uses the HMAC\_SHA1 with AES\_CBC mode~\footnote{This makes for t = 20 bytes MAC size. \\ b = 16 bytes block size}. The format in this Section mostly depends upon the same format as used in~\cite{alfardan2013lucky}, to keep consistency throughout the literature. Furthermore, this subsection is heavily inspired by ~\cite{alfardan2013lucky,vaudenay2002security}.
+For this Section, w.l.o.g., it will be assumed that this application data protocol run uses the HMAC\_SHA1 with AES\_CBC mode~\footnote{This makes for t = 20 bytes MAC size. \\ b = 16 bytes block size}.\footnote{The format in this Section mostly depends upon the same format as used in~\cite{alfardan2013lucky}, to keep consistency throughout the literature. Furthermore, this subsection is heavily inspired by ~\cite{alfardan2013lucky,vaudenay2002security}.}
 
 Recall the following two formulas to calculate ciphertexts (when  encrypting) and plaintexts (when decrypting).
 \[
@@ -161,10 +161,10 @@ If this $C^{att}$ is sent towards an Oracle, one of three things can happen inte
 \begin{enumerate}
   \item The padding gets accepted. This happens in two cases.
 	\begin{itemize}
-		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte. This is seen as valid padding, and chopped off. The last $20$ bytes of $P_4$ that are left, are seen as MAC. With the plaintext record having length $64 - 21 (\text{padding and MAC}) = 43 \text{bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (43 \text{ bytes} = 56\text{ bytes}$.
-		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' (longer) version of padding is less likely by a factor of $2^8$ (byte). This means that there are at least $2$ bytes of padding chopped off at the end, after which a $20$ bytes MAC is also chopped off, with a remainder of at most $64 - 22 (\text{padding and MAC}) = 42 \text{bytes}$ for plaintext record R. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (42 \text{ bytes at most}) = 55\text{ bytes}$.
+		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte.
+		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' (longer) version of padding is less likely by a factor of $2^8$ (byte).
 	\end{itemize}
-  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. As specified in TLS 1.0~\cite{dierks1999rfc},a \texttt{decryption\_failed} error is thrown. For the sake of Section~\ref{sec:lucky}, we also describe the implementation of TLS 1.1 and 1.2~\cite{ietf2008transport}. In this specification, the padding should be considered of zero length, resulting in the last $20$ bytes of the decrypted $C^{att}$ to be considered the MAC which is calculated on $\text{SQN} || \text{HDR} || R (64 - 20 \text{ bytes} = 57\text{ bytes}$.
+  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. 
 \end{enumerate}
 
 \textit{Category 1} If a padding gets accepted, this means that either the last plaintext byte of block $P_4$ is $0\text{x}00$, or some other accepting byte pattern occupies the last bytes of $P_4$. These cases can be distinguished by changing the penultimate byte in $\Delta$, so that $P_4$ gets a changed penultimate byte. If the padding is still accepted, the last byte of $P_4$ is $0\text{x}00$. If the padding does not get accepted, the last byte was similar to the penultimate byte (and maybe even more preceding bytes), and this can be found out by repeating the changing of $\Delta$ in other bytes as well (resulting in the discovery of even more plaintext bytes in $P_4$).
@@ -195,6 +195,9 @@ Decrypt last byte
 14. --output delta.
 15. -Endif.
 16. Endif.
+17. Set delta = delta xor ((14 times) zb
+                 || 0xFF || zb.
+18. Go to step 2.
 \end{verbatim}
 The output is the $\Delta$ for which $P_4$ ends in $0\text{x}00$. The last byte of $P^{*}$ is equal to the last byte of $P_4 \oplus \Delta$. Since the last byte of $P_4$ is $0\text{x}00$, the last byte of $P^{*}$ is equal to the last byte of $\Delta$.
 
@@ -206,16 +209,17 @@ i bytes from the end known
 1. Set zb = 0x00, j = 0.
 2. Set delta = (16 times) zb xor rm.
 3. Set j = j + 1.
-4. Set delta = delta xor (15-i times) zb ||
-          zb + j || (i times) 0xFF.
+4. Set delta = delta xor (15-i times) zb 
+          || zb + j || (i times) 0xFF.
 5. Construct C_att = HDR||IV||C_1||C_2||
           C' xor delta||C*.
 6. Send C_att to the Oracle.
 7. If 'decryption_failed' is thrown then
 8. -Go to step 3.
 9. Else
-10. -Set delta = delta xor (15-i-1 times) zb ||
-          (i+2 times) 0xFF
+10. -Set delta = delta xor 
+         (15-i-1 times) zb || 
+         (i+2 times) 0xFF
 11. -Construct C_att = HDR||IV||C_1||C_2||
           C' xor delta||C*.
 12. -Sent C_att to the Oracle.
@@ -225,10 +229,17 @@ i bytes from the end known
 16. --output delta.
 17. -Endif.
 18. Endif.
+19. Set delta = delta xor ((15-i-1 
+                 times) zb || 0xFF || 
+                 (i + 1 times) zb.
+20. Set j = 0.
+21. Go to step 3.
 \end{verbatim}
 The output is the $\Delta$ for which $P_4$ ends in i+1 times (counting from 1) $0\text{x}i$. The last i+1 bytes of $P^{*}$ are equal to the last i+1 bytes of $P_4 \oplus \Delta$.
 
-Using this last algorithm, one can completely decrypt ciphertext $C^{*}$ into $P^{*}$, with an average of $\frac{2^8}{2} = 2^7$ tries per byte, having $16$ ($2^4$) bytes in AES\_CBC mode, the complete average of recovering block $C^{*}$ is $2^7 * 2^4 = 2^{11}$. Though, this is not completely true, since the \texttt{decryption\_failed} errors are fatal to the TLS connection. To solve this, Section~\ref{sec:paddingoracle:bomb} will discuss Bomb Oracles to overcome this problem.
+Using this last algorithm, one can completely decrypt ciphertext $C^{*}$ into $P^{*}$, with an average of $\frac{2^8}{2} = 2^7$ tries per byte, having $16$ ($2^4$) bytes in AES\_CBC mode, the complete average of recovering block $C^{*}$ is $2^7 * 2^4 = 2^{11}$.
+
+Though, the above is not entirely true, since the \texttt{decryption\_failed} errors are fatal to the TLS connection. To solve this, Section~\ref{sec:paddingoracle:bomb} will discuss Bomb Oracles to overcome this problem. Furthermore, the error messages that are proposed in this subsection are not send in the clear, and can therefore not be read by an attacker. This will be solved by the introduction of distinct timing attacks (Lucky Thirteen) in Section~\ref{sec:lucky} instead of relying upon the error messages.
 
 \subsection{Bomb Oracles}
 \label{sec:paddingoracle:bomb}
@@ -239,10 +250,52 @@ Problem: \texttt{decryption\_failed} is a fatal error. \\
 
 \section{Lucky Thirteen}
 \label{sec:lucky}
-The RFC of TLS 1.2~\cite{ietf2008transport} reports
+Recall from Section~\ref{sec:tls:accepting} the difference between TLS 1.0 and TLS 1.1 and 1.2. If the padding is not found to be valid, in TLS 1.0 the \texttt{decryption\_failed} error is thrown, though, in TLS 1.1 and 1.2, zero length padding is assumed, and the MAC is calculated on the entire record left when chopping off the MAC.
+
+The Lucky Thirteen attack will be described in three parts, first the bandit of applying zero length padding is discussed, after which the complexity of the attack is explained, and finally the practicality of this attack is discussed.
+
+\subsection{TLS 1.1 and 1.2 bandit}
+\label{sec:lucky:bandit}
+Recall from Section~\ref{sec:paddingoracle:padding} that three things can happen when sending a ciphertext $C^{att}$ towards the Oracle.
+\begin{enumerate}
+  \item The padding gets accepted. This happens in two cases.
+	\begin{itemize}
+		\item The last byte of $P_4$ ends with a $0\text{x}00$ byte. This is seen as valid padding, and chopped off. The last $20$ bytes of $P_4$ that are left, are seen as MAC. With the plaintext record having length $64 - 21 (\text{padding and MAC}) = 43 \text{ bytes}$. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (43 \text{ bytes} = 56\text{ bytes}$.
+		\item The decrypted $C^{att}$ contains a different byte pattern of which the last $X$ are seen as a valid padding. This could be one as mentioned in Section~\ref{sec:crypto:padding}, of which every 'higher' (longer) version of padding is less likely by a factor of $2^8$ (byte). This means that there are at least $2$ bytes of padding chopped off at the end, after which a $20$ bytes MAC is also chopped off, with a remainder of at most $64 - 22 (\text{padding and MAC}) = 42 \text{ bytes}$ for plaintext record R. The MAC of $20$ bytes is calculated on $\text{SQN} || \text{HDR} || R (42 \text{ bytes at most}) = 55\text{ bytes}$.
+	\end{itemize}
+  \item The padding does not get accepted. This means that the last bytes of the decrypted version of $C^{att}$ do not contain a pattern as described in category 1. As specified in TLS 1.0~\cite{dierks1999rfc}, a \texttt{decryption\_failed} error is thrown. The padding should be considered of zero length, resulting in the last $20$ bytes of the decrypted $C^{att}$ to be considered the MAC which is calculated on $\text{SQN} || \text{HDR} || R (64 - 20) \text{ bytes} = 57\text{ bytes}$.
+\end{enumerate}
+
+Recall from Section~\ref{sec:crypto:hmac} that the formula for the number of hash rounds depends on the number of bytes that are fed into the HMAC algorithm. The formula is as follows, with $L$ being the number of bytes of plaintext.
+\[ \lceil \frac{L - 55}{64} \rceil + 4 \]
+The number of rounds for the different cases described above are lined up in Table~\ref{sec:lucky:bandit:table}.
+\begin{table}[h]
+\begin{tabular}{l|l}
+Case & Number of hash rounds  \\ \hline 
+Accepted, $0\text{x}00$ & 5 rounds (56 bytes)  \\
+Accepted, different padding pattern & 4 rounds (at most 55 bytes)  \\
+Not accepted & 5 rounds (57 bytes) \\
+\end{tabular}
+\caption{Number of hash rounds per (non-)acceptance category}
+\label{sec:lucky:bandit:table}
+\end{table}
+It can be seen from Table~\ref{sec:lucky:bandit:table} that a padding pattern that is valid and has a length higher than one, has one hash round less. The Lucky Thirteen attack exploits the timing issue that already was identified by~\citeauthor{ietf2008transport} in the RFC, they report the following.
 \begin{quote}
-Implementation note: Canvel et al. [CBCTIME] have demonstrated a timing attack on CBC padding based on the time required to compute the MAC.  In order to defend against this attack, implementations MUST ensure that record processing time is essentially the same whether or not the padding is correct.  In general, the best way to do this is to compute the MAC even if the padding is incorrect, and only then reject the packet.  For instance, if the pad appears to be incorrect, the implementation might assume a zero-length pad and then compute the MAC.  This leaves a small timing channel, since MAC performance depends to some extent on the size of the data fragment, but it is not believed to be large enough to be exploitable, due to the large block size of existing MACs and the small size of the timing signal.
+\textit{Implementation note: Canvel et al. [CBCTIME] have demonstrated a timing attack on CBC padding based on the time required to compute the MAC.  In order to defend against this attack, implementations MUST ensure that record processing time is essentially the same whether or not the padding is correct.  In general, the best way to do this is to compute the MAC even if the padding is incorrect, and only then reject the packet.  For instance, if the pad appears to be incorrect, the implementation might assume a zero-length pad and then compute the MAC.  This leaves a small timing channel, since MAC performance depends to some extent on the size of the data fragment, but it is not believed to be large enough to be exploitable, due to the large block size of existing MACs and the small size of the timing signal.}
 \end{quote}
+That last sentence is the essence that is explained in this subsection, and was exploited by~\citeauthor{alfardan2013lucky}~\cite{alfardan2013lucky}.
+
+\subsection{Complexity of Lucky Thirteen}
+\label{sec:lucky:complexity}
+As shown in Section~\ref{sec:lucky:bandit}, the case in which a valid padding pattern can be distinguished, needs at least a valid padding pattern of length two. This leads to complexity of (in worst case), trying all byte variations for the last two bytes of $\Delta$, leading to a worst case complexity of $2^8*2^8 = 2^{16}$, in the average case $\frac{2^{16}}{2} = 2^{15}$. With knowledge about the plaintext $P^{*}$'s last two bytes, the third-to-last byte can be discovered by setting the last two plaintext bytes of $P_4$ to $0\text{x}02||0\text{x}02$ and altering the third-to-last byte. In worst case, this take $2^8$ trials with an average of $\frac{2^8}{2} = 2^7$ for every byte of plaintext from right to left. To recover an entire plaintext block $P^{*}$, one needs to first get the last two bytes with a complexity of $2^{15}$ and then find the other $14$ bytes with complexity $2^7$, giving a total of $2^{15} * 14 * 2^7 \approx 2^{26}$ trials.
+
+\subsection{Practicality of Lucky Thirteen}
+\label{sec:lucky:practicality}
+
+
+BEAST~\cite{duong2011here}
+
+
 
 regular plaintext recovery of a block: 2\^23 connections
 if base64 (cookies, http basic access authentication) used: 2\^23 -> 2\^19 connection per block
