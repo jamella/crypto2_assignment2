@@ -17,17 +17,16 @@
 
 
 
+
 \begin{abstract}
-\textcolor{red}{TODO: clean up the text underneath, be more elaborate, fix text from all sections.}
+This paper describes the February 2013 attack called Lucky Thirteen on TLS 1.1 and 1.2. Different sections within this paper explain the cryptographic protocols and primitives and some of the concepts of TLS that all allow for this attack. The authors of the attack describe how to decrypt ciphertext bytes from the TLS stream between some victim and an online service, which allow for cookie stealing of the victim. Some specially crafted Javascript that can run in the browser of the victim can decrypt cookie bytes by setting up $2^{13}$ TLS connections to the online service. The online service is exploited as a padding oracle, revealing information about the plaintext by validating padding encrypted in the ciphertext.
 
-The attack presented by~\citeauthor{alfardan2013lucky} requires $2^{23}$ TLS connections at most to get the plaintext of one encrypted block ($16$ bytes when AES is used as a block cipher), which can be decreased with different tweaks to $2^{13}$ TLS connections per byte of a cookie.
+For now, the Lucky Thirteen attack is highly theoretical, but this allows for more advanced attacks that actually practically steal cookies by running within a victims browser incorporating the improvements described for this attack. The author of this paper hopes that by additional publications on the fundamental problems involved with TLS, the online community will start embracing the Authenticated Encryption introduced in TLS 1.2, which should fix all of these fundamental problems.
 \end{abstract}
-
-
-
 \begin{IEEEkeywords}
-Cryptography, SSL, TLS, Lucky Thirteen, Padding Oracle, Timing attacks
+Cryptography, TLS, Lucky Thirteen, Padding Oracle, Timing attacks, BEAST, multi-session TLS attacks
 \end{IEEEkeywords}
+
 
 
 
@@ -39,6 +38,7 @@ TLS, Transport Layer Security, is the most used cryptographic protocol to encryp
 This paper explores the February 2013 theoretical attack on TLS (and DTLS) called \textit{Lucky Thirteen}~\cite{alfardan2013lucky}. This theoretic attack describes why the bandages used to fix TLS 1.1 and 1.2 after the attack of~\citeauthor{canvel2003password}~\cite{canvel2003password} do not provide the necessary security to the most used internet security protocol.This paper is scoped to the implications of this attack on TLS Security, and does not provide information on how to apply a similar attack on DTLS. The reader is referred to~\cite{alfardan2013lucky} for details on DTLS, although mentionable is the fact that the theoretical attack on TLS, is practical for DTLS due to its nature not to terminate sessions on bad MAC or bad padding errors.
 
 The paper is ordered as follows. First, Section~\ref{sec:crypto} will very briefly overview the cryptography (and crypto format) that's important to understand the attack. Section~\ref{sec:tls} describes the main features in TLS responsible for padding oracle attacks, which will be discussed in Section~\ref{sec:paddingoracle}. The wrongly placed bandages and their weaknesses are discussed in Section~\ref{sec:lucky} which covers the Lucky Thirteen attack. The future of TLS is discusses in Section~\ref{sec:future}. Finally, this paper ends with a conclusion in Section~\ref{sec:conclusion}.
+
 
 
 
@@ -97,6 +97,7 @@ With $P_i$ the blocks of plaintext (plus extras, as described in Section~\ref{se
 
 
 
+
 % SECTION III
 \section{TLS}
 \label{sec:tls}
@@ -128,6 +129,7 @@ The RFC~\cite{ietf2008transport} does not describe the steps that need to be tak
   \item Check: is the MAC correct (using the correct SQN number and HDR field)?
 \end{itemize}
 Since the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} on TLS 1.0, exploiting differences when accepting records, it is advised by TLS 1.1 and 1.2~\cite{ietf2008transport} to avoid timing differences by assuming zero length padding if the padding format sanity check does not work out. In this case, the MAC is still calculated, but the record is nonetheless discarded. More on this in Section~\ref{sec:paddingoracle} and Section~\ref{sec:lucky}.
+
 
 
 
@@ -273,7 +275,7 @@ As discussed in Section~\ref{sec:paddingoracle:padding}, the attack by~\citeauth
 	\item The attacker is able to re-initiate the TLS session after it terminates.
 	\item The secret plaintext $P^{*}$ appears in the same position in each additional TLS connection.
 \end{itemize}
-Fortunately, these two requirements can be met by a multi-session attack~\cite{vaudenay2002security}. The attack works by feeding the browser of the victim with specially crafted Javascript that repeatedly connects to the Oracle using a TLS connection. With every new connection that is set-up, the cookie ($P^{*}$) is at a known location in the HTTPS stream, see Figure~\ref{fig:beast_http}\footnote{For further information about the HTTPS stream, the reader is referred to the paper explaining the BEAST attack~\cite{duong2011here}, it is considered out of scope for this paper.}. In this figure, the authors of~\cite{duong2011here} have an exemplary block size of 8 bytes. They show that by controlling some of the bytes within the HTTPS stream, the bytes that the attacker is after can be forced towards a fixed position at the starting point of a new block.  This way of attacking is called a \textit{blockwise chosen-boundary attack (BCBA)}~\cite{duong2011here}.
+Fortunately, these two requirements can be met by a multi-session attack~\cite{vaudenay2002security}. The attack works by feeding the browser of the victim with specially crafted Javascript that repeatedly connects to the Oracle using a TLS connection. With every new connection that is set-up, the cookie ($P^{*}$)\footnote{For simplicity reasons, cookies are seen as a block of $16$ bytes in the paper. In fact, they can have a variable length.} is at a known location in the HTTPS stream, see Figure~\ref{fig:beast_http}\footnote{For further information about the HTTPS stream, the reader is referred to the paper explaining the BEAST attack~\cite{duong2011here}, it is considered out of scope for this paper.}. In this figure, the authors of~\cite{duong2011here} have an exemplary block size of 8 bytes. They show that by controlling some of the bytes within the HTTPS stream, the bytes that the attacker is after can be forced towards a fixed position at the starting point of a new block.  This way of attacking is called a \textit{blockwise chosen-boundary attack (BCBA)}~\cite{duong2011here}.
 
 \begin{figure}[h]
 	\centering
@@ -298,6 +300,7 @@ Thus he can use the same technique as used in Section~\ref{sec:paddingoracle:pad
 Having this property explained, one can easily see that while ciphertexts may be encrypted with different keys, it is no problem to still control the testing for a correct padding by manipulating the guesses the attacker makes.
 
 The advantage of using this technique will be elaborated upon in Section~\ref{sec:lucky:improvements}, but one can image that the different guesses for $P_i^{*}$ can be ordered for probability, instead of checking all plaintexts, speeding up this attack considerably.
+
 
 
 
@@ -435,6 +438,7 @@ Authenticated encryption, such as AES-GCM~\cite{salowey2008aes}\footnote{The des
 	\caption{Distribution of timing values for distinguishing attack on OpenSSL TLS, with $M_0$ in red, $M_1$ in blue.~\cite{alfardan2013lucky}}
 	\label{fig:afterfix}
 \end{figure}
+
 
 
 
