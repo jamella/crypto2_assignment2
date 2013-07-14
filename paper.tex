@@ -69,7 +69,7 @@ The cryptographic format used in this paper is presented in Table~\ref{sec:crypt
 \label{sec:crypto:hmac}
 To ensure message integrity, RFC5246~\cite{ietf2008transport} prescribes the use of a keyed Message Authentication Code (MAC). The MAC cipher suites described in the RFC are based on hashing functions, HMACs, and are described in~\cite{krawczyk1997rfc}. Though, the RFC does not prohibit the use of other cipher suites, the implementations found by~\citeauthor{alfardan2013lucky} in~\cite{alfardan2013lucky} all restrict the use to HMAC-MD5, HMAC-SHA-1 or HMAC-SHA-256~\footnote{HMAC-MD5 produces 16 bytes of MAC.\\HMAC-SHA-1 produces 20 bytes of MAC.\\HMAC-SHA-256 produces 32 bytes of MAC.} To compute the HMAC for a message M and key K, the specified HMAC algorithms use the following formula. 
 \[ \text{HMAC}(K,M) = H((K \oplus opad)||H(K \oplus ipad)||M)). \]
-With \textit{opad}, \textit{ipad} to be specific $64$-byte values and key $K$ zero-padded to $64$ bytes. "Each hash function uses a \textit{Merkle-Damg\aa rd strengthening}. Here, an 8-byte length field followed by padding of a specified byte format are appended to the message M to be hashed. The padding is at least $1$ byte in length and aligns the data on a $64$-byte boundary. The relevant hash functions also have an iterated structure, processing messages in chunks of $64$ bytes ($512$ bits) using a compression function, with the output of each compression step being chained into the next step. The compression function in turn involves a complex round structure, with many basic arithmetic operations on data being involved in each round."~\cite{alfardan2013lucky}.\footnote{The exact working of this Merkle-Damg\aa rd strengthening is not important for the Lucky Thirteen and therefore falls out of the scope of this paper.}
+With \textit{opad}, \textit{ipad} to be specific $64$-byte values and key $K$ zero-padded to $64$ bytes. "Each hash function uses a \textit{Merkle-Damg\aa rd strengthening}. Here, an 8-byte length field followed by padding of a specified byte format are appended to the message M to be hashed. The padding is at least $1$ byte in length and aligns the data on a $64$-byte boundary. The relevant hash functions also have an iterated structure, processing messages in chunks of $64$ bytes ($512$ bits) using a compression function, with the output of each compression step being chained into the next step. The compression function in turn involves a complex round structure, with many basic arithmetic operations on data being involved in each round."~\cite{alfardan2013lucky}.\footnote{The exact working of this Merkle-Damg\aa rd strengthening is not important for this paper and therefore falls out of the scope of this paper.}
 This means that, depending on the size of message M, the number of runs of the hash function H can be computed. Because of the Merkle-Damg\aa rd strengthening, a message M is appended by the $8$-byte length field, and padded to be a multiple of $64$ bytes. This means that the first of the Merkle-Damg\aa rd rounds consists of $55$ bytes of message M, followed by $64$ bytes for every following $64$ bytes of message M. The inner hash function depends on the $\text{message length of} M + 1$ constant hash function round, the outer hash function is a constant of $2$. This means that the following formula represents the number of hash function calls for L is the message length of M in bytes:
 \[ \lceil \frac{L - 55}{64} \rceil + 4 \]
 
@@ -267,8 +267,34 @@ Though, the above is not entirely true, since the \texttt{decryption\_failed} er
 % SECTION IV-B
 \subsection{Bomb Oracles}
 \label{sec:paddingoracle:bomb}
-Problem: \texttt{decryption\_failed} is a fatal error. \\
-\textcolor{red}{TODO: fixed using D, with multi-session TLS attacks}
+As discussed in Section~\ref{sec:paddingoracle:padding}, the attack by~\citeauthor{vaudenay2002security}~\cite{vaudenay2002security} would only work if the TLS connections would not have been terminated at the first wrongly padded plaintext received by the Oracle. The authors of a novel attack that includes multi-session byte querying~\cite{canvel2003password} have solved this issue by the introduction of so called \textit{bomb oracles}, which explode at receiving a wrongly padded plaintext. Their attack makes use of two following requirements.
+\begin{itemize}
+	\item The attacker is able to re-initiate the TLS session after it terminates.
+	\item The secret plaintext $P^{*}$ appears in the same position in each additional TLS connection.
+\end{itemize}
+Fortunately, these two requirements can be met by a multi-session attack~\cite{vaudenay2002security}. The attack works by feeding the browser of some user with specially crafted Javascript that repeatedly connects to the Oracle using a TLS connection. With every new connection that is set-up, the cookie ($P^{*}$) is at a known location in the HTTPS stream, see Figure~\ref{fig:beast_http}\footnote{For further information about the HTTPS stream, the reader is referred to the paper explaining the BEAST attack~\cite{duong2011here}, it is considered out of scope for this paper}. In this figure, the authors of~\cite{duong2011here} have an exemplary block size of 8 bytes. They show that by controlling some of the bytes within the HTTPS stream, the bytes that the attacker is after can be forced towards a fixed position at the starting point of a new block.  This way of attacking is called a \textit{blockwise chosen-boundary attack (BCBA)}~\cite{duong2011here}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.5\textwidth]{beast_https.png}
+	\caption{HTTPS Record.~\cite{duong2011here}}
+	\label{fig:beast_http}
+\end{figure}
+
+While having plaintext block $P^{*}$ at the same, fixed position at the beginning of a new block, an attacker can use the following novelty to extract the plaintext while it is encrypted with different keys by querying for assumed plaintext bytes. 
+
+Suppose that the attacker has the possibility of finding $C^{*}$ and $C^{'}$ (preceding $C^{*}$) in a TLS connection. The attacker can guess what the plaintext $P^{*}$ corresponding to $C^{*}$ is, and test this hypothesis by recalling the following. (This should be done for all possible plaintexts).
+\[
+\begin{split}
+C^{*} &= E_K(P^{*} \oplus C^{'}) \\
+P^{*} &= D_K(C^{*}) \oplus C^{'}
+\end{split}
+\]
+If an attacker wants to manipulate a byte to become some part of the padding (of importance as explained thoroughly in Section~\ref{sec:paddingoracle:padding}), the attacker can craft the wanted byte as follows. Consider the attacker wants to turn the i'th byte in the decrypted $P$ into 0x(15-i), if he guesses the i'th byte of $P^{*}$ is $P_i^{*}$.
+\[ D_K(C_i^{*}) = P_i^{*} \oplus 0\text{x}(15-i) \oplus C_i^{'} \]
+Thus he can use the same technique as used in Section~\ref{sec:paddingoracle:padding} with $\Delta_i = P_i^{*} \oplus 0\text{x}(15-i)$, and set al $\Delta_j$'s $j>i$ to also match the correct padding. With every new TLS connection set-up, the attacker needs to receive the $C^{'}$ and $C^{*}$ again and build the query for the Oracle with a new pair of these, though, the two ciphertexts he needs for this are sent in the set-up and thus can be easily extracted.
+
+The advantage of using this technique will be elaborated upon in Section~\ref{sec:lucky:improvements}, but one can image that the different guesses for $P_i^{*}$ can be ordered for probability, instead of checking all plaintexts, speeding up this attack considerably.
 
 
 
