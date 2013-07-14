@@ -386,7 +386,7 @@ The actual novelty of the Lucky Thirteen attack is in the fact that~\citeauthor{
 	\label{fig:luckybyteattacker}
 \end{figure}
 
-Considering that an attacker wants to decrypt a complete ciphertext block, Section~\ref{sec:lucky:complexity} already showed that, without connection terminations, it would take approximately $2^{15}$ trails. Now, taken into account the number of TLS connections necessary to resolve a complete byte with a probability of $1$, L = $2^7$, the attacker needs about $2^7*2^{15} = 2^{22}$ TLS connections on average. \citeauthor{alfardan2013lucky} calculated that, with their setup, they need about $32$ hours because of the many TLS connection setups and teardowns.
+Considering that an attacker wants to decrypt a complete ciphertext block, Section~\ref{sec:lucky:complexity} already showed that, without connection terminations, it would take approximately $2^{15}$ trails. Now, taken into account the number of TLS connections necessary to resolve a complete byte with a probability of $1$, L = $2^7$, the attacker needs about $2^7*2^{15} = 2^{22}$ TLS connections on average. \citeauthor{alfardan2013lucky} calculated that, with their setup, they need about $32$ hours because of the many TLS connection set-ups and tear-downs.
 
 % Section V - D
 \subsection{Attack improvements}
@@ -413,7 +413,7 @@ The random variables $V_L = \sum_{i=1}^L X_i^{'}/L \text{ and } W_L = \sum_{i=1}
 % SECTION VI-B
 \subsection{Use RC4}
 \label{sec:future:rc4}
-The easiest way to avoid \textit{this} attack is to switch to RC4 as a stream cipher, and step away from the block ciphers to encrypt traffic on TLS connections. Though, literature has shown that the first output byte of RC4 is strongly biased~\cite{fluhrer2001weaknesses}, it was even shown that there is a correlation between the RC4 keystream and the key~\cite{klein2008attacks}. For the future, it would be a good idea to move away from RC4 instead of running towards this very old stream cipher again, proven to have weaknesses.
+The easiest way to avoid \textit{this} attack is to switch to RC4 as a stream cipher, and step away from the block ciphers to encrypt traffic on TLS connections. Though, literature has shown that the first output byte of RC4 is strongly biased~\cite{fluhrer2001weaknesses}, it was even shown that there is a correlation between the RC4 key stream and the key~\cite{klein2008attacks}. For the future, it would be a good idea to move away from RC4 instead of running towards this very old stream cipher again, proven to have weaknesses.
 
 % SECTION VI-C
 \subsection{Authenticated Encryption}
