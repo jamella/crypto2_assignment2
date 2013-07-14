@@ -1,0 +1,581 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0038)http://www.hjp.at/doc/rfc/rfc5288.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    
+    <link rel="stylesheet" type="text/css" href="./J_files/tab1.css">
+    
+	<title>hjp: doc: RFC 5288: AES Galois Counter Mode (GCM) Cipher Suites for TLS</title>
+	<link rel="stylesheet" type="text/css" href="./J_files/rfc.css">
+      
+  <style type="text/css"></style><script type="text/javascript" async="" src="./J_files/ga.js"></script></head>
+
+      
+  
+  <body>
+    <div class="container1">
+    <div class="sidebar">
+      
+  
+  <div class="languages">
+    
+  </div>
+
+      <ul class="menu">
+	  <li><a href="http://www.hjp.at/" class="vt-p">hjp</a>
+	    <ul>
+	      <li><a href="http://www.hjp.at/doc/" class="vt-p">doc</a>
+	        <ul>
+		  <li><a href="http://www.hjp.at/doc/rfc/" class="vt-p">RFCs</a>
+		    <ul>
+		      <li class="selected"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a></li>
+		    </ul>
+		  </li>
+		</ul>
+              </li>
+	    </ul>
+	  </li>
+	</ul>
+      
+  
+  <div class="backlinks">
+    <strong>Backlinks:</strong>
+    
+  </div>
+
+      <div id="track-min-size">&nbsp;</div>
+    </div>
+    <div class="content">
+    <table>
+<tbody><tr><th align="right">Rfc</th><td><a href="./J_files/J.htm" class="vt-p">5288</a></td>
+</tr>
+<tr><th align="right">Title</th><td>AES Galois Counter Mode (GCM) Cipher Suites for TLS</td>
+</tr>
+<tr><th align="right">Author</th><td>J. Salowey,
+     A. Choudhury, D. McGrew</td>
+</tr>
+<tr><th align="right">Date</th><td>August 2008</td>
+</tr>
+<tr><th align="right">Format:</th><td><a href="http://www.hjp.at/doc/rfc/rfc5288.txt" class="vt-p">TXT</a>=16468 bytes</td>
+</tr>
+<tr><th align="right">Status:</th><td>PROPOSED STANDARD</td>
+</tr>
+<tr><td colspan="2"><hr></td></tr>
+</tbody></table>
+<div class="page" id="page_1">
+<pre class="para">
+
+
+
+
+</pre><pre class="para">Network Working Group                                         J. Salowey
+Request for Comments: 5288                                  A. Choudhury
+Category: Standards Track                                      D. McGrew
+                                                     Cisco Systems, Inc.
+                                                             August 2008
+
+
+</pre><pre class="para">          AES Galois Counter Mode (GCM) Cipher Suites for TLS
+
+</pre><pre class="para">Status of This Memo
+
+</pre><pre class="para">   This document specifies an Internet standards track protocol for the
+   Internet community, and requests discussion and suggestions for
+   improvements.  Please refer to the current edition of the "Internet
+   Official Protocol Standards" (STD 1) for the standardization state
+   and status of this protocol.  Distribution of this memo is unlimited.
+
+</pre><pre class="para">Abstract
+
+</pre><pre class="para">   This memo describes the use of the Advanced Encryption Standard (AES)
+   in Galois/Counter Mode (GCM) as a Transport Layer Security (TLS)
+   authenticated encryption operation.  GCM provides both
+   confidentiality and data origin authentication, can be efficiently
+   implemented in hardware for speeds of 10 gigabits per second and
+   above, and is also well-suited to software implementations.  This
+   memo defines TLS cipher suites that use AES-GCM with RSA, DSA, and
+   Diffie-Hellman-based key exchange mechanisms.
+
+</pre><pre class="para">Table of Contents
+
+</pre><pre class="para">   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_1" class="vt-p">1.  Introduction</a>  . . . . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_2" class="vt-p">2</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_2" class="vt-p">2.  Conventions Used in This Document</a> . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_2" class="vt-p">2</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_3" class="vt-p">3.  AES-GCM Cipher Suites</a> . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_2" class="vt-p">2</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_4" class="vt-p">4.  TLS Versions</a>  . . . . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_3" class="vt-p">3</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_5" class="vt-p">5.  IANA Considerations</a> . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_4" class="vt-p">4</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_6" class="vt-p">6.  Security Considerations</a> . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_4" class="vt-p">4</a>
+     <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_6.1" class="vt-p">6.1.  Counter Reuse</a> . . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_4" class="vt-p">4</a>
+     <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_6.2" class="vt-p">6.2.  Recommendations for Multiple Encryption Processors</a>  . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_4" class="vt-p">4</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_7" class="vt-p">7.  Acknowledgements</a>  . . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_5" class="vt-p">5</a>
+   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_8" class="vt-p">8.  References</a>  . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_6" class="vt-p">6</a>
+     <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_8.1" class="vt-p">8.1.  Normative References</a>  . . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_6" class="vt-p">6</a>
+     <a href="http://www.hjp.at/doc/rfc/rfc5288.html#sec_8.2" class="vt-p">8.2.  Informative References</a>  . . . . . . . . . . . . . . . . . . <a href="http://www.hjp.at/doc/rfc/rfc5288.html#page_6" class="vt-p">6</a>
+
+
+
+
+
+
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 1]
+</pre></div>
+<div class="page" id="page_2">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para" id="sec_1">1.  Introduction
+
+</pre><pre class="para">   This document describes the use of AES <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_AES" title="   [AES]         National Institute of Standards and Technology,
+                 &quot;Advanced Encryption Standard (AES)&quot;, FIPS 197,
+                 November 2001.
+
+" class="vt-p">[AES]</a> in Galois Counter Mode
+   (GCM) <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_GCM" title="   [GCM]         Dworkin, M., &quot;Recommendation for Block Cipher Modes of
+                 Operation: Galois/Counter Mode (GCM) and GMAC&quot;,
+                 National Institute of Standards and Technology SP 800-
+                 38D, November 2007.
+
+" class="vt-p">[GCM]</a> (AES-GCM) with various key exchange mechanisms as a
+   cipher suite for TLS.  AES-GCM is an authenticated encryption with
+   associated data (AEAD) cipher (as defined in TLS 1.2 <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a>)
+   providing both confidentiality and data origin authentication.  The
+   following sections define cipher suites based on RSA, DSA, and
+   Diffie-Hellman key exchanges; ECC-based (Elliptic Curve Cryptography)
+   cipher suites are defined in a separate document <a href="http://www.hjp.at/doc/rfc/rfc5289.html" class="vt-p">[RFC5289]</a>.
+
+</pre><pre class="para">   AES-GCM is not only efficient and secure, but hardware
+   implementations can achieve high speeds with low cost and low
+   latency, because the mode can be pipelined.  Applications that
+   require high data throughput can benefit from these high-speed
+   implementations.  AES-GCM has been specified as a mode that can be
+   used with IPsec ESP <a href="http://www.hjp.at/doc/rfc/rfc4106.html" class="vt-p">[RFC4106]</a> and 802.1AE Media Access Control (MAC)
+   Security <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_IEEE8021AE" title="   [IEEE8021AE]  Institute of Electrical and Electronics Engineers,
+                 &quot;Media Access Control Security&quot;, IEEE Standard 802.1AE,
+                 August 2006.
+
+" class="vt-p">[IEEE8021AE]</a>.
+
+</pre><pre class="para" id="sec_2">2.  Conventions Used in This Document
+
+</pre><pre class="para">   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in <a href="http://www.hjp.at/doc/rfc/rfc2119.html" class="vt-p">[RFC2119]</a>.
+
+</pre><pre class="para" id="sec_3">3.  AES-GCM Cipher Suites
+
+</pre><pre class="para">   The following cipher suites use the new authenticated encryption
+   modes defined in TLS 1.2 with AES in Galois Counter Mode (GCM) <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_GCM" title="   [GCM]         Dworkin, M., &quot;Recommendation for Block Cipher Modes of
+                 Operation: Galois/Counter Mode (GCM) and GMAC&quot;,
+                 National Institute of Standards and Technology SP 800-
+                 38D, November 2007.
+
+" class="vt-p">[GCM]</a>:
+
+</pre><pre class="para">      CipherSuite TLS_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0x9C}
+      CipherSuite TLS_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0x9D}
+      CipherSuite TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0x9E}
+      CipherSuite TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0x9F}
+      CipherSuite TLS_DH_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0xA0}
+      CipherSuite TLS_DH_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0xA1}
+      CipherSuite TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 = {0x00,0xA2}
+      CipherSuite TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 = {0x00,0xA3}
+      CipherSuite TLS_DH_DSS_WITH_AES_128_GCM_SHA256 = {0x00,0xA4}
+      CipherSuite TLS_DH_DSS_WITH_AES_256_GCM_SHA384 = {0x00,0xA5}
+      CipherSuite TLS_DH_anon_WITH_AES_128_GCM_SHA256 = {0x00,0xA6}
+      CipherSuite TLS_DH_anon_WITH_AES_256_GCM_SHA384 = {0x00,0xA7}
+
+</pre><pre class="para">   These cipher suites use the AES-GCM authenticated encryption with
+   associated data (AEAD) algorithms AEAD_AES_128_GCM and
+   AEAD_AES_256_GCM described in <a href="http://www.hjp.at/doc/rfc/rfc5116.html" class="vt-p">[RFC5116]</a>.  Note that each of these
+   AEAD algorithms uses a 128-bit authentication tag with GCM (in
+   particular, as described in Section 3.5 of <a href="http://www.hjp.at/doc/rfc/rfc4366.html" class="vt-p">[RFC4366]</a>, the
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 2]
+</pre></div>
+<div class="page" id="page_3">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para">   "truncated_hmac" extension does not have an effect on cipher suites
+   that do not use HMAC).  The "nonce" SHALL be 12 bytes long consisting
+   of two parts as follows: (this is an example of a "partially
+   explicit" nonce; see Section 3.2.1 in <a href="http://www.hjp.at/doc/rfc/rfc5116.html" class="vt-p">[RFC5116]</a>).
+
+</pre><pre class="para">             struct {
+                opaque salt[4];
+                opaque nonce_explicit[8];
+             } GCMNonce;
+
+</pre><pre class="para">   The salt is the "implicit" part of the nonce and is not sent in the
+   packet.  Instead, the salt is generated as part of the handshake
+   process: it is either the client_write_IV (when the client is
+   sending) or the server_write_IV (when the server is sending).  The
+   salt length (SecurityParameters.fixed_iv_length) is 4 octets.
+
+</pre><pre class="para">   The nonce_explicit is the "explicit" part of the nonce.  It is chosen
+   by the sender and is carried in each TLS record in the
+   GenericAEADCipher.nonce_explicit field.  The nonce_explicit length
+   (SecurityParameters.record_iv_length) is 8 octets.
+
+</pre><pre class="para">   Each value of the nonce_explicit MUST be distinct for each distinct
+   invocation of the GCM encrypt function for any fixed key.  Failure to
+   meet this uniqueness requirement can significantly degrade security.
+   The nonce_explicit MAY be the 64-bit sequence number.
+
+</pre><pre class="para">   The RSA, DHE_RSA, DH_RSA, DHE_DSS, DH_DSS, and DH_anon key exchanges
+   are performed as defined in <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a>.
+
+</pre><pre class="para">   The Pseudo Random Function (PRF) algorithms SHALL be as follows:
+
+</pre><pre class="para">      For cipher suites ending with _SHA256, the PRF is the TLS PRF
+      <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a> with SHA-256 as the hash function.
+
+</pre><pre class="para">      For cipher suites ending with _SHA384, the PRF is the TLS PRF
+      <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a> with SHA-384 as the hash function.
+
+</pre><pre class="para">   Implementations MUST send TLS Alert bad_record_mac for all types of
+   failures encountered in processing the AES-GCM algorithm.
+
+</pre><pre class="para" id="sec_4">4.  TLS Versions
+
+</pre><pre class="para">   These cipher suites make use of the authenticated encryption with
+   additional data defined in TLS 1.2 <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a>.  They MUST NOT be
+   negotiated in older versions of TLS.  Clients MUST NOT offer these
+   cipher suites if they do not offer TLS 1.2 or later.  Servers that
+   select an earlier version of TLS MUST NOT select one of these cipher
+   suites.  Because TLS has no way for the client to indicate that it
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 3]
+</pre></div>
+<div class="page" id="page_4">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para">   supports TLS 1.2 but not earlier, a non-compliant server might
+   potentially negotiate TLS 1.1 or earlier and select one of the cipher
+   suites in this document.  Clients MUST check the TLS version and
+   generate a fatal "illegal_parameter" alert if they detect an
+   incorrect version.
+
+</pre><pre class="para" id="sec_5">5.  IANA Considerations
+
+</pre><pre class="para">   IANA has assigned the following values for the cipher suites defined
+   in this document:
+
+</pre><pre class="para">      CipherSuite TLS_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0x9C}
+      CipherSuite TLS_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0x9D}
+      CipherSuite TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0x9E}
+      CipherSuite TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0x9F}
+      CipherSuite TLS_DH_RSA_WITH_AES_128_GCM_SHA256 = {0x00,0xA0}
+      CipherSuite TLS_DH_RSA_WITH_AES_256_GCM_SHA384 = {0x00,0xA1}
+      CipherSuite TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 = {0x00,0xA2}
+      CipherSuite TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 = {0x00,0xA3}
+      CipherSuite TLS_DH_DSS_WITH_AES_128_GCM_SHA256 = {0x00,0xA4}
+      CipherSuite TLS_DH_DSS_WITH_AES_256_GCM_SHA384 = {0x00,0xA5}
+      CipherSuite TLS_DH_anon_WITH_AES_128_GCM_SHA256 = {0x00,0xA6}
+      CipherSuite TLS_DH_anon_WITH_AES_256_GCM_SHA384 = {0x00,0xA7}
+
+</pre><pre class="para" id="sec_6">6.  Security Considerations
+
+</pre><pre class="para">   The security considerations in <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a> apply to this document as
+   well.  The remainder of this section describes security
+   considerations specific to the cipher suites described in this
+   document.
+
+</pre><pre class="para" id="sec_6.1">6.1.  Counter Reuse
+
+</pre><pre class="para">   AES-GCM security requires that the counter is never reused.  The IV
+   construction in Section 3 is designed to prevent counter reuse.
+
+</pre><pre class="para">   Implementers should also understand the practical considerations of
+   IV handling outlined in Section 9 of <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_GCM" title="   [GCM]         Dworkin, M., &quot;Recommendation for Block Cipher Modes of
+                 Operation: Galois/Counter Mode (GCM) and GMAC&quot;,
+                 National Institute of Standards and Technology SP 800-
+                 38D, November 2007.
+
+" class="vt-p">[GCM]</a>.
+
+</pre><pre class="para" id="sec_6.2">6.2.  Recommendations for Multiple Encryption Processors
+
+</pre><pre class="para">   If multiple cryptographic processors are in use by the sender, then
+   the sender MUST ensure that, for a particular key, each value of the
+   nonce_explicit used with that key is distinct.  In this case, each
+   encryption processor SHOULD include, in the nonce_explicit, a fixed
+   value that is distinct for each processor.  The recommended format is
+
+</pre><pre class="para">        nonce_explicit = FixedDistinct || Variable
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 4]
+</pre></div>
+<div class="page" id="page_5">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para">   where the FixedDistinct field is distinct for each encryption
+   processor, but is fixed for a given processor, and the Variable field
+   is distinct for each distinct nonce used by a particular encryption
+   processor.  When this method is used, the FixedDistinct fields used
+   by the different processors MUST have the same length.
+
+</pre><pre class="para">   In the terms of Figure 2 in <a href="http://www.hjp.at/doc/rfc/rfc5116.html" class="vt-p">[RFC5116]</a>, the Salt is the Fixed-Common
+   part of the nonce (it is fixed, and it is common across all
+   encryption processors), the FixedDistinct field exactly corresponds
+   to the Fixed-Distinct field, the Variable field corresponds to the
+   Counter field, and the explicit part exactly corresponds to the
+   nonce_explicit.
+
+</pre><pre class="para">   For clarity, we provide an example for TLS in which there are two
+   distinct encryption processors, each of which uses a one-byte
+   FixedDistinct field:
+
+</pre><pre class="para">          Salt          = eedc68dc
+          FixedDistinct = 01       (for the first encryption processor)
+          FixedDistinct = 02       (for the second encryption processor)
+
+</pre><pre class="para">   The GCMnonces generated by the first encryption processor, and their
+   corresponding nonce_explicit, are:
+
+</pre><pre class="para">          GCMNonce                    nonce_explicit
+          ------------------------    ----------------------------
+          eedc68dc0100000000000000    0100000000000000
+          eedc68dc0100000000000001    0100000000000001
+          eedc68dc0100000000000002    0100000000000002
+          ...
+
+</pre><pre class="para">   The GCMnonces generated by the second encryption processor, and their
+   corresponding nonce_explicit, are
+
+</pre><pre class="para">          GCMNonce                    nonce_explicit
+          ------------------------    ----------------------------
+          eedc68dc0200000000000000    0200000000000000
+          eedc68dc0200000000000001    0200000000000001
+          eedc68dc0200000000000002    0200000000000002
+          ...
+
+
+</pre><pre class="para" id="sec_7">7.  Acknowledgements
+
+</pre><pre class="para">   This document borrows heavily from <a href="http://www.hjp.at/doc/rfc/rfc5289.html" class="vt-p">[RFC5289]</a>.  The authors would like
+   to thank Alex Lam, Simon Josefsson, and Pasi Eronen for providing
+   useful comments during the review of this document.
+
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 5]
+</pre></div>
+<div class="page" id="page_6">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para" id="sec_8">8.  References
+
+</pre><pre class="para" id="sec_8.1">8.1.  Normative References
+
+</pre><pre class="para" id="ref_AES">   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_AES" title="   [AES]         National Institute of Standards and Technology,
+                 &quot;Advanced Encryption Standard (AES)&quot;, FIPS 197,
+                 November 2001.
+
+" class="vt-p">[AES]</a>         National Institute of Standards and Technology,
+                 "Advanced Encryption Standard (AES)", FIPS 197,
+                 November 2001.
+
+</pre><pre class="para" id="ref_GCM">   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_GCM" title="   [GCM]         Dworkin, M., &quot;Recommendation for Block Cipher Modes of
+                 Operation: Galois/Counter Mode (GCM) and GMAC&quot;,
+                 National Institute of Standards and Technology SP 800-
+                 38D, November 2007.
+
+" class="vt-p">[GCM]</a>         Dworkin, M., "Recommendation for Block Cipher Modes of
+                 Operation: Galois/Counter Mode (GCM) and GMAC",
+                 National Institute of Standards and Technology SP 800-
+                 38D, November 2007.
+
+</pre><pre class="para" id="ref_RFC2119">   <a href="http://www.hjp.at/doc/rfc/rfc2119.html" class="vt-p">[RFC2119]</a>     Bradner, S., "Key words for use in RFCs to Indicate
+                 Requirement Levels", BCP 14, <a href="http://www.hjp.at/doc/rfc/rfc2119.html" class="vt-p">RFC 2119</a>, March 1997.
+
+</pre><pre class="para" id="ref_RFC5116">   <a href="http://www.hjp.at/doc/rfc/rfc5116.html" class="vt-p">[RFC5116]</a>     McGrew, D., "An Interface and Algorithms for
+                 Authenticated Encryption", <a href="http://www.hjp.at/doc/rfc/rfc5116.html" class="vt-p">RFC 5116</a>, January 2008.
+
+</pre><pre class="para" id="ref_RFC5246">   <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">[RFC5246]</a>     Dierks, T. and E. Rescorla, "The Transport Layer
+                 Security (TLS) Protocol Version 1.2", <a href="http://www.hjp.at/doc/rfc/rfc5246.html" class="vt-p">RFC 5246</a>,
+                 August 2008.
+
+</pre><pre class="para" id="sec_8.2">8.2.  Informative References
+
+</pre><pre class="para" id="ref_IEEE8021AE">   <a href="http://www.hjp.at/doc/rfc/rfc5288.html#ref_IEEE8021AE" title="   [IEEE8021AE]  Institute of Electrical and Electronics Engineers,
+                 &quot;Media Access Control Security&quot;, IEEE Standard 802.1AE,
+                 August 2006.
+
+" class="vt-p">[IEEE8021AE]</a>  Institute of Electrical and Electronics Engineers,
+                 "Media Access Control Security", IEEE Standard 802.1AE,
+                 August 2006.
+
+</pre><pre class="para" id="ref_RFC4106">   <a href="http://www.hjp.at/doc/rfc/rfc4106.html" class="vt-p">[RFC4106]</a>     Viega, J. and D. McGrew, "The Use of Galois/Counter
+                 Mode (GCM) in IPsec Encapsulating Security Payload
+                 (ESP)", <a href="http://www.hjp.at/doc/rfc/rfc4106.html" class="vt-p">RFC 4106</a>, June 2005.
+
+</pre><pre class="para" id="ref_RFC4366">   <a href="http://www.hjp.at/doc/rfc/rfc4366.html" class="vt-p">[RFC4366]</a>     Blake-Wilson, S., Nystrom, M., Hopwood, D., Mikkelsen,
+                 J., and T. Wright, "Transport Layer Security (TLS)
+                 Extensions", <a href="http://www.hjp.at/doc/rfc/rfc4366.html" class="vt-p">RFC 4366</a>, April 2006.
+
+</pre><pre class="para" id="ref_RFC5289">   <a href="http://www.hjp.at/doc/rfc/rfc5289.html" class="vt-p">[RFC5289]</a>     Rescorla, E., "TLS Elliptic Curve Cipher Suites with
+                 SHA-256/384 and AES Galois Counter Mode", <a href="http://www.hjp.at/doc/rfc/rfc5289.html" class="vt-p">RFC 5289</a>,
+                 August 2008.
+
+
+
+
+
+
+
+
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 6]
+</pre></div>
+<div class="page" id="page_7">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para">Authors' Addresses
+
+</pre><pre class="para">   Joseph Salowey
+   Cisco Systems, Inc.
+   2901 3rd. Ave
+   Seattle, WA  98121
+   USA
+
+</pre><pre class="para">   EMail: jsalowey@cisco.com
+
+
+</pre><pre class="para">   Abhijit Choudhury
+   Cisco Systems, Inc.
+   3625 Cisco Way
+   San Jose, CA  95134
+   USA
+
+</pre><pre class="para">   EMail: abhijitc@cisco.com
+
+
+</pre><pre class="para">   David McGrew
+   Cisco Systems, Inc.
+   170 W Tasman Drive
+   San Jose, CA  95134
+   USA
+
+</pre><pre class="para">   EMail: mcgrew@cisco.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 7]
+</pre></div>
+<div class="page" id="page_8">
+<pre class="header"><a href="./J_files/J.htm" class="vt-p">RFC 5288</a>                 AES-GCM Cipher suites               August 2008
+
+
+</pre><pre class="para">Full Copyright Statement
+
+</pre><pre class="para">   Copyright (C) The IETF Trust (2008).
+
+</pre><pre class="para">   This document is subject to the rights, licenses and restrictions
+   contained in BCP 78, and except as set forth therein, the authors
+   retain all their rights.
+
+</pre><pre class="para">   This document and the information contained herein are provided on an
+   "AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/SHE REPRESENTS
+   OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY, THE IETF TRUST AND
+   THE INTERNET ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF
+   THE INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
+   WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+</pre><pre class="para">Intellectual Property
+
+</pre><pre class="para">   The IETF takes no position regarding the validity or scope of any
+   Intellectual Property Rights or other rights that might be claimed to
+   pertain to the implementation or use of the technology described in
+   this document or the extent to which any license under such rights
+   might or might not be available; nor does it represent that it has
+   made any independent effort to identify any such rights.  Information
+   on the procedures with respect to rights in RFC documents can be
+   found in BCP 78 and BCP 79.
+
+</pre><pre class="para">   Copies of IPR disclosures made to the IETF Secretariat and any
+   assurances of licenses to be made available, or the result of an
+   attempt made to obtain a general license or permission for the use of
+   such proprietary rights by implementers or users of this
+   specification can be obtained from the IETF on-line IPR repository at
+   http://www.ietf.org/ipr.
+
+</pre><pre class="para">   The IETF invites any interested party to bring to its attention any
+   copyrights, patents or patent applications, or other proprietary
+   rights that may cover technology that may be required to implement
+   this standard.  Please address the information to the IETF at
+   ietf-ipr@ietf.org.
+
+
+
+
+
+
+
+
+
+
+
+
+</pre><pre class="footer">Salowey, et al.             Standards Track                     [Page 8]
+</pre></div>
+
+	</div>
+    </div>
+    <script type="text/javascript" src="./J_files/mytracker.js"></script>
+    <noscript>&lt;img src="/icons/black.gif?nojs" style="display: none" alt="" /&gt;</noscript>
+    <!-- Piwik -->
+    <script type="text/javascript">
+      var pkBaseURL = (("https:" == document.location.protocol) ? "https://piwik.wsr.ac.at/piwik/" : "http://piwik.wsr.ac.at/piwik/");
+      document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
+      </script><script src="./J_files/piwik.js" type="text/javascript"></script><script type="text/javascript">
+      try {
+      var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 2);
+      piwikTracker.trackPageView();
+      piwikTracker.enableLinkTracking();
+      } catch( err ) {}
+    </script><noscript>&lt;p&gt;&lt;img src="http://piwik.wsr.ac.at/piwik/piwik.php?idsite=2" style="border:0" alt="" /&gt;&lt;/p&gt;</noscript>
+    <!-- End Piwik Tracking Code -->
+  
+
+    
+
+
+    </body></html>

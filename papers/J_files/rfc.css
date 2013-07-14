@@ -1,0 +1,55 @@
+.page {
+    border-style: none;
+    background-color : #EED;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding: 0.5em;
+    page-break-inside: avoid;
+    page-break-after: always;
+    page-break-before: always;
+}
+.para {
+}
+.header {
+    color: #888;
+}
+.footer {
+    color: #888;
+}
+
+pre {
+    background-color : inherit;
+    border-style: none;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    top-padding: 0em;
+    bottom-padding: 0em;
+}
+
+a {
+    color: #008;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #408;
+}
+
+@media print {
+    .page {
+	background-color : #FFF;
+    }
+    .content {
+	background-color : #FFF;
+    }
+    body {
+	background-color : #FFF;
+    }
+    .sidebar {
+	display: none;
+    }
+}

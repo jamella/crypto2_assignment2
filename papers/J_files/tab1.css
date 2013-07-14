@@ -1,0 +1,168 @@
+.menu {
+    margin-left : 0px;
+    margin-right: 4px;
+    margin-top: 0px;
+    list-style-position : outside;
+    list-style-type : none;
+    border-bottom : 1px solid #000000;
+    border-right : 1px solid #000000;
+    background-color : #CCC;
+    color : Black;
+    padding-left: 0px;
+    font-size : 0.85em;
+    /* float: left; */
+}
+
+.menu ul {
+    list-style-position : outside;
+    list-style-type : none;
+    margin: 0px 0px 0px 8px;
+    padding-left: 0px;
+    padding-right: 0px;
+    background-color : #CCC;
+    color : Black;
+}
+
+.menu li {
+    background-color : #CCC;
+    color : Black;
+    font-family : sans-serif;
+    font-weight : normal;
+    border-top : 1px solid Black;
+    border-left : 1px solid Black;
+    margin: 0px;
+    padding: 1px 0px 0px 5px;
+}
+
+.menu a {
+    text-decoration: none;
+    color : #800;
+}
+
+.menu .selected > a {
+    text-decoration: none;
+    color : #800;
+}
+
+.menu li.selected {
+    background-color : #888;
+    color : #FFF;
+    font-family : "Trebuchet MS",Geneva, Arial, Helvetica, sans-serif;
+    font-weight : bold;
+    border-top : 1px solid Black;
+    border-left : 1px solid Black;
+    margin: 0px;
+    padding: 1px 1px 1px 5px;
+}
+
+.content {
+    margin-left : 0px;
+    margin-right: 4px;
+    margin-top: 0px;
+    list-style-position : outside;
+    list-style-type : none;
+    border-bottom : 1px solid #FFF;
+    border-left : 1px solid #FFF;
+    border-right : 1px solid #FFF;
+    border-top : 1px solid #FFF;
+    background-color : #DDC;
+    color : Black;
+    display: table-cell;
+}
+
+body {
+    background-color : #AAA;
+}
+
+body :link {
+    color : #448;
+}
+
+body :visited {
+    color : #848;
+}
+
+.footer {
+  clear: both;
+}
+
+.sidebar {
+    display: table-cell;
+    max-width : 15em;
+    border-color : #FFF;
+    border-width : 1px;
+    border-style : solid;
+}
+
+.post-count-label-before, .post-count-label-after {
+    color: #004;
+}
+
+.backlinks {
+    clear: both;
+    font-size: 70%;
+}
+
+#svnkeywords {
+  text-align: right;
+  background-color : #EED;
+  color : #888;
+}
+
+.container1 {
+    display: table-row;
+}
+
+p, li, dd {
+    max-width: 40em;
+}
+
+blockquote {
+    max-width: 36em;
+    text-align: justify;
+}
+
+.figure {
+    background-color : #EED;
+    padding: 0.5em;
+    margin: 0.5em;
+    border-bottom : 1px solid #FFF;
+    border-left : 1px solid #FFF;
+    border-right : 1px solid #FFF;
+    border-top : 1px solid #FFF;
+}
+
+pre {
+  background-color : #EED;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #888;
+}
+
+#track-min-size {
+    font-size: 1px;
+    background-color : #EED;
+    color : #888;
+}
+
+blockquote a.cite {
+    float: right;
+    margin-left: 1em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    border-width: 0;
+}
+
+blockquote a.cite img {
+    border-width: 0;
+}
+
+th {
+    text-align: left;
+    vertical-align: baseline;
+}
+
+h1,h2,h3,h4,h5,h6,p,dl {
+    margin-left: 2%;
+    margin-right: 2%;
+}
